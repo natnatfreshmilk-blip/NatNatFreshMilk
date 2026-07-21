@@ -3,7 +3,7 @@ import {
   Lock, KeyRound, Save, Plus, Edit, Trash2, CheckCircle, 
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
-  HelpCircle, Sparkles, Film
+  HelpCircle, Sparkles, Film, Upload
 } from 'lucide-react';
 import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo } from '../types';
 
@@ -145,6 +145,48 @@ export default function AdminPanel({
     buttonText: 'Pelajari Selengkapnya',
     isActive: true
   });
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleImageUpload = (file: File) => {
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran gambar terlalu besar. Maksimum 5MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPromoForm(prev => ({ ...prev, mediaUrl: reader.result as string }));
+        triggerNotification('Foto flyer berhasil diunggah!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
 
   const openAddPromo = () => {
     setEditingPromo(null);
@@ -2131,27 +2173,96 @@ export default function AdminPanel({
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block font-bold text-slate-700">Link URL Media (Gambar / Video) *</label>
-                    <span className="text-[9px] text-sky-600 font-bold">Mendukung Youtube, FB, Tiktok, IG & Unsplash</span>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={promoForm.mediaUrl}
-                    onChange={(e) => setPromoForm({ ...promoForm, mediaUrl: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono"
-                    placeholder={
-                      promoForm.mediaType === 'image'
-                        ? "https://images.unsplash.com/photo-xxxx..."
-                        : "https://www.youtube.com/watch?v=xxxx atau link IG / Tiktok"
-                    }
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1 font-normal">
-                    {promoForm.mediaType === 'image' 
-                      ? "Masukkan link gambar yang valid. Anda dapat meng-copy alamat gambar dari internet."
-                      : "Masukkan link video dari Youtube, TikTok, Instagram Reels, Facebook, dll. Sistem akan memuatnya secara otomatis."}
-                  </p>
+                  {promoForm.mediaType === 'image' ? (
+                    <div className="space-y-3">
+                      <label className="block font-bold text-slate-700">Foto Flyer Promo *</label>
+                      
+                      {/* Drag & Drop Upload Area */}
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-200 flex flex-col items-center justify-center cursor-pointer ${
+                          isDragging
+                            ? 'border-sky-500 bg-sky-50 text-sky-600'
+                            : promoForm.mediaUrl
+                            ? 'border-emerald-300 bg-emerald-50/20 text-emerald-800'
+                            : 'border-slate-250 hover:border-sky-400 bg-slate-50/50 hover:bg-slate-50 text-slate-500'
+                        }`}
+                        onClick={() => document.getElementById('promo-image-file')?.click()}
+                      >
+                        <input
+                          type="file"
+                          id="promo-image-file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        
+                        {promoForm.mediaUrl ? (
+                          <div className="space-y-3 w-full flex flex-col items-center">
+                            <div className="relative w-40 aspect-video rounded-xl overflow-hidden border border-emerald-200 shadow-sm bg-white shrink-0">
+                              <img
+                                src={promoForm.mediaUrl}
+                                alt="Flyer Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[11px] font-bold text-emerald-700 flex items-center justify-center space-x-1">
+                                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                <span>Foto Flyer Siap Diterbitkan!</span>
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Klik atau tarik foto baru di sini untuk mengganti</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mx-auto text-slate-500">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-slate-700">Tarik & Letakkan Foto Flyer di Sini</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">Atau klik untuk menelusuri file dari komputer Anda (Maks. 5MB)</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Optional URL input in case they want to link to a web image instead */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-[10px] font-bold text-slate-500">Atau gunakan URL Gambar Internet (Opsional)</label>
+                          <span className="text-[8px] text-slate-400">Ganti jika ingin menggunakan link luar</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={promoForm.mediaUrl.startsWith('data:image') ? '' : promoForm.mediaUrl}
+                          onChange={(e) => setPromoForm({ ...promoForm, mediaUrl: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono text-[10px]"
+                          placeholder="https://images.unsplash.com/photo-xxxx..."
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block font-bold text-slate-700">Link URL Media (Video Embed) *</label>
+                        <span className="text-[9px] text-sky-600 font-bold">Mendukung Youtube, FB, Tiktok, IG</span>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={promoForm.mediaUrl}
+                        onChange={(e) => setPromoForm({ ...promoForm, mediaUrl: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono"
+                        placeholder="https://www.youtube.com/watch?v=xxxx atau link IG / Tiktok"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1 font-normal">
+                        Masukkan link video dari Youtube, TikTok, Instagram Reels, Facebook, dll. Sistem akan memuatnya secara otomatis.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

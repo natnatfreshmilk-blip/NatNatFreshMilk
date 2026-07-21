@@ -40,7 +40,7 @@ export default function Header({ activeTab, setActiveTab, openPortal }: HeaderPr
   return (
     <header id="app-header" className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-24">
           {/* Logo Brand */}
           <div 
             className="flex items-center cursor-pointer"
@@ -49,7 +49,7 @@ export default function Header({ activeTab, setActiveTab, openPortal }: HeaderPr
             <img 
               src={logoImg} 
               alt="NatNat Fresh Milk" 
-              className="h-14 md:h-16 w-auto object-contain hover:scale-102 transition-transform duration-300"
+              className="h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform duration-300"
               referrerPolicy="no-referrer"
             />
           </div>
