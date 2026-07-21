@@ -523,7 +523,7 @@ export default function LandingPage({ setActiveTab, openPortal, landingSettings,
             <div className="grid grid-cols-1 md:grid-cols-12">
               {/* Left Side: Flyer Graphic or Image/Video (Span 7) */}
               <div className="md:col-span-7 bg-slate-950 flex items-center justify-center min-h-[300px] md:min-h-[500px] relative overflow-hidden">
-                {selectedPromo.id === 'promo-01' ? (
+                {selectedPromo.id === 'promo-01' && selectedPromo.mediaUrl.includes('photo-1584269600464-37b1b58a9fe7') ? (
                   /* RENDERING DYNAMIC FLYER 1 EXACTLY LIKE THE USER'S ATTACHED IMAGE 1 */
                   <div className="w-full h-full min-h-[480px] bg-gradient-to-b from-blue-700 via-blue-800 to-indigo-900 text-white p-6 flex flex-col justify-between font-sans relative overflow-hidden select-none">
                     {/* Milk Splashes & decorative bg circles */}
@@ -620,7 +620,7 @@ export default function LandingPage({ setActiveTab, openPortal, landingSettings,
                       </div>
                     </div>
                   </div>
-                ) : selectedPromo.id === 'promo-02' ? (
+                ) : (selectedPromo.id === 'promo-02' && selectedPromo.mediaUrl.includes('photo-1550583724-b2692b85b150')) ? (
                   /* RENDERING DYNAMIC FLYER 2 EXACTLY LIKE THE USER'S ATTACHED IMAGE 2 */
                   <div className="w-full h-full min-h-[480px] bg-gradient-to-b from-sky-400 via-blue-500 to-blue-700 text-white p-6 flex flex-col justify-between font-sans relative overflow-hidden select-none">
                     {/* Splash accents */}
