@@ -3,7 +3,8 @@ import {
   Lock, KeyRound, Save, Plus, Edit, Trash2, CheckCircle, 
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
-  HelpCircle, Sparkles, Film, Upload
+  HelpCircle, Sparkles, Film, Upload, Copy, Download, Code,
+  Info, ExternalLink, FileJson
 } from 'lucide-react';
 import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo } from '../types';
 
@@ -64,6 +65,11 @@ export default function AdminPanel({
 
   const [isMitraModalOpen, setIsMitraModalOpen] = useState(false);
   const [editingMitra, setEditingMitra] = useState<MitraSPPG | null>(null);
+
+  // Export / Deploy Vercel Sync Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportTab, setExportTab] = useState<'code' | 'json'>('code');
+  const [copiedSuccess, setCopiedSuccess] = useState(false);
 
   // Form input states
   // Product Form states
@@ -147,19 +153,70 @@ export default function AdminPanel({
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const handleImageUpload = (file: File) => {
+  // Compress image helper using canvas to keep Base64 size lightweight (~100KB instead of 5MB)
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            resolve(compressed);
+          } else {
+            resolve(event.target?.result as string);
+          }
+        };
+        img.onerror = () => reject('Gagal memuat file gambar');
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => reject('Gagal membaca file');
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (file: File) => {
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Ukuran gambar terlalu besar. Maksimum 5MB.");
+      if (file.size > 15 * 1024 * 1024) {
+        alert("Ukuran gambar terlalu besar. Maksimum 15MB.");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPromoForm(prev => ({ ...prev, mediaUrl: reader.result as string }));
-        triggerNotification('Foto flyer berhasil diunggah!');
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingImage(true);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setPromoForm(prev => ({ ...prev, mediaUrl: compressedBase64 }));
+        triggerNotification('Foto flyer berhasil diunggah & dioptimasi!');
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPromoForm(prev => ({ ...prev, mediaUrl: reader.result as string }));
+          triggerNotification('Foto flyer berhasil diunggah!');
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 
@@ -965,18 +1022,51 @@ export default function AdminPanel({
           {/* TAB 1.5: PROMO CAMPAIGN CRUD */}
           {activeTab === 'promos' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
                   <h3 className="font-sans font-black text-lg text-slate-800">Manajemen Media & Banner Promo</h3>
                   <p className="text-xs text-slate-400">Atur kampanye gizi, tutorial video, dan program bagi-bagi freezer harian untuk dapur SPPG di beranda depan.</p>
                 </div>
-                <button
-                  onClick={openAddPromo}
-                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Promo</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setIsExportModalOpen(true)}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+                    title="Ekspor kode data untuk Vercel / GitHub"
+                  >
+                    <Code className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Sinkronkan ke Vercel / GitHub</span>
+                  </button>
+
+                  <button
+                    onClick={openAddPromo}
+                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1 shadow-sm shadow-sky-100"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Promo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Vercel Deployment Notice Banner */}
+              <div className="bg-gradient-to-r from-sky-50 to-indigo-50/50 border border-sky-100 rounded-2xl p-4 flex items-start space-x-3 text-xs text-sky-900 shadow-sm">
+                <Info className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-sky-950">
+                    💡 Mengapa Foto / Promo Kembali ke Default di Vercel?
+                  </p>
+                  <p className="text-slate-600 leading-relaxed text-[11px]">
+                    Foto flyer yang Anda unggah melalui Admin Panel secara otomatis tersimpan di browser komputer Anda (<span className="font-mono bg-sky-100 text-sky-800 px-1 py-0.5 rounded">localStorage</span>). Namun, Vercel merender tampilan publik dari file <span className="font-mono bg-sky-100 text-sky-800 px-1 py-0.5 rounded">src/data.ts</span> di GitHub.
+                  </p>
+                  <div className="pt-1 flex items-center space-x-2">
+                    <button
+                      onClick={() => setIsExportModalOpen(true)}
+                      className="font-bold text-sky-700 underline hover:text-sky-900 flex items-center space-x-1 text-[11px]"
+                    >
+                      <span>Klik di sini untuk menyalin Kode Data (`data.ts`) & panduan Vercel</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Promo List Table */}
@@ -2310,6 +2400,192 @@ export default function AdminPanel({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: EXPORT & VERCEL SYNC MODAL */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-6 relative animate-in zoom-in-95 duration-200">
+            
+            <button
+              onClick={() => setIsExportModalOpen(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div>
+              <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest block flex items-center space-x-1">
+                <Code className="w-3.5 h-3.5 text-sky-500" />
+                <span>SINKRONISASI DATA DEPLOYMENT VERCEL / GITHUB</span>
+              </span>
+              <h2 className="font-sans font-black text-xl text-slate-800">
+                Ekspor Kode Data Promo & Flyer
+              </h2>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex space-x-2 border-b border-slate-100 pb-2">
+              <button
+                onClick={() => setExportTab('code')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                  exportTab === 'code'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <Code className="w-3.5 h-3.5" />
+                <span>Kode TypeScript (`src/data.ts`)</span>
+              </button>
+              <button
+                onClick={() => setExportTab('json')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                  exportTab === 'json'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <FileJson className="w-3.5 h-3.5" />
+                <span>Backup JSON & Restore</span>
+              </button>
+            </div>
+
+            {exportTab === 'code' ? (
+              <div className="space-y-4 text-xs">
+                <div className="bg-slate-900 text-slate-200 rounded-2xl p-4 font-mono text-[10px] relative max-h-60 overflow-y-auto border border-slate-800 shadow-inner">
+                  <pre className="whitespace-pre-wrap break-all leading-relaxed">
+{`export const INITIAL_PROMOS: Promo[] = ${JSON.stringify(promos, null, 2)};`}
+                  </pre>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-emerald-50 border border-emerald-100 p-3 rounded-2xl">
+                  <div className="text-emerald-900 text-[11px] font-medium">
+                    <span className="font-bold block">1-Klik Salin Kode Data Promo:</span>
+                    Salin kode di atas lalu buka file <span className="font-mono bg-emerald-100 text-emerald-950 px-1 py-0.5 rounded">src/data.ts</span> di GitHub untuk memperbarui nilai <span className="font-mono font-bold">INITIAL_PROMOS</span>.
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const code = `export const INITIAL_PROMOS: Promo[] = ${JSON.stringify(promos, null, 2)};`;
+                      navigator.clipboard.writeText(code);
+                      setCopiedSuccess(true);
+                      triggerNotification('Kode INITIAL_PROMOS berhasil disalin!');
+                      setTimeout(() => setCopiedSuccess(false), 3000);
+                    }}
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs shrink-0 transition-all flex items-center space-x-1.5 shadow-md ${
+                      copiedSuccess 
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    }`}
+                  >
+                    {copiedSuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedSuccess ? 'Berhasil Disalin!' : 'Salin Kode TS'}</span>
+                  </button>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-[11px] text-slate-600">
+                  <p className="font-bold text-slate-800 flex items-center space-x-1">
+                    <Info className="w-4 h-4 text-sky-500" />
+                    <span>Langkah Mudah Agar Foto Tampil Permanen di Vercel:</span>
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-1 font-normal">
+                    <li>Klik tombol <strong className="text-slate-800">"Salin Kode TS"</strong> di atas.</li>
+                    <li>Buka repository GitHub Anda dan edit file <strong className="text-slate-800">src/data.ts</strong>.</li>
+                    <li>Ganti variabel <strong className="text-slate-800">export const INITIAL_PROMOS = [...]</strong> dengan kode yang baru Anda salin.</li>
+                    <li>Simpan (Commit changes) di GitHub. Vercel secara otomatis akan memuat foto flyer & promo terbaru untuk seluruh pengunjung web!</li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                <p className="text-slate-500 text-[11px] leading-relaxed">
+                  Anda juga dapat mengunduh seluruh promo dan foto flyer ini sebagai file JSON cadangan untuk disimpan di HP / Komputer, atau diimpor kembali kapan saja.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border border-slate-200 bg-slate-50 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center mb-2">
+                        <Download className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-black text-slate-800 text-xs">Unduh Backup JSON</h4>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Simpan konfigurasi promo saat ini ke file .json</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(promos, null, 2));
+                        const downloadAnchor = document.createElement('a');
+                        downloadAnchor.setAttribute("href", dataStr);
+                        downloadAnchor.setAttribute("download", "natnat_promos_backup.json");
+                        document.body.appendChild(downloadAnchor);
+                        downloadAnchor.click();
+                        downloadAnchor.remove();
+                        triggerNotification('File backup natnat_promos_backup.json diunduh!');
+                      }}
+                      className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Unduh File .JSON</span>
+                    </button>
+                  </div>
+
+                  <div className="border border-slate-200 bg-slate-50 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-black text-slate-800 text-xs">Impor File Backup JSON</h4>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Muat ulang data promo dari file .json cadangan</p>
+                    </div>
+
+                    <label className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Pilih File .JSON</span>
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              try {
+                                const imported = JSON.parse(event.target?.result as string);
+                                if (Array.isArray(imported)) {
+                                  setPromos(imported);
+                                  triggerNotification('Data promo berhasil diimpor!');
+                                  setIsExportModalOpen(false);
+                                } else {
+                                  alert('Format file JSON tidak valid.');
+                                }
+                              } catch {
+                                alert('Gagal membaca file JSON.');
+                              }
+                            };
+                            reader.readAsText(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-slate-100 pt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+              >
+                Tutup Window
+              </button>
+            </div>
+
           </div>
         </div>
       )}

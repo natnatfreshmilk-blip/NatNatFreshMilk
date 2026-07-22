@@ -113,45 +113,85 @@ export default function App() {
     return cached ? JSON.parse(cached) : INITIAL_PROMOS;
   });
 
-  // Keep localStorage updated upon state modifications
+  // Keep localStorage updated upon state modifications safely
   useEffect(() => {
-    localStorage.setItem('natnat_products', JSON.stringify(products));
+    try {
+      localStorage.setItem('natnat_products', JSON.stringify(products));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for products', e);
+    }
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_articles', JSON.stringify(articles));
+    try {
+      localStorage.setItem('natnat_articles', JSON.stringify(articles));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for articles', e);
+    }
   }, [articles]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_lab_reports', JSON.stringify(labReports));
+    try {
+      localStorage.setItem('natnat_lab_reports', JSON.stringify(labReports));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for labReports', e);
+    }
   }, [labReports]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_mitra_list', JSON.stringify(mitraList));
+    try {
+      localStorage.setItem('natnat_mitra_list', JSON.stringify(mitraList));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for mitraList', e);
+    }
   }, [mitraList]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_orders', JSON.stringify(orders));
+    try {
+      localStorage.setItem('natnat_orders', JSON.stringify(orders));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for orders', e);
+    }
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_deliveries', JSON.stringify(deliveries));
+    try {
+      localStorage.setItem('natnat_deliveries', JSON.stringify(deliveries));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for deliveries', e);
+    }
   }, [deliveries]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_tickets', JSON.stringify(tickets));
+    try {
+      localStorage.setItem('natnat_tickets', JSON.stringify(tickets));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for tickets', e);
+    }
   }, [tickets]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_landing_settings', JSON.stringify(landingSettings));
+    try {
+      localStorage.setItem('natnat_landing_settings', JSON.stringify(landingSettings));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for landingSettings', e);
+    }
   }, [landingSettings]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_about_settings', JSON.stringify(aboutSettings));
+    try {
+      localStorage.setItem('natnat_about_settings', JSON.stringify(aboutSettings));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for aboutSettings', e);
+    }
   }, [aboutSettings]);
 
   useEffect(() => {
-    localStorage.setItem('natnat_promos', JSON.stringify(promos));
+    try {
+      localStorage.setItem('natnat_promos', JSON.stringify(promos));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for promos', e);
+    }
   }, [promos]);
 
   const renderActiveComponent = () => {
