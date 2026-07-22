@@ -37,7 +37,8 @@ const defaultLandingSettings = {
   mitraCount: '52 Dapur',
   peternakCount: '150+ Mitra',
   freezerTitle: 'Klaim Freezer Box RSA Gratis untuk Dapur Anda!',
-  freezerDesc: 'Dapatkan fasilitas Freezer Box RSA Gratis sebagai media penyimpanan susu dingin agar senantiasa steril di titik SPPG. Cukup dengan mendaftar kemitraan suplai rutin, Freezer akan menjadi hak milik penuh dapur gizi setelah memenuhi kuota distribusi.'
+  freezerDesc: 'Dapatkan fasilitas Freezer Box RSA Gratis sebagai media penyimpanan susu dingin agar senantiasa steril di titik SPPG. Cukup dengan mendaftar kemitraan suplai rutin, Freezer akan menjadi hak milik penuh dapur gizi setelah memenuhi kuota distribusi.',
+  whatsappNumber: '0812-1768-7815'
 };
 
 // Default Settings for Tentang Kami
@@ -219,6 +220,7 @@ export default function App() {
             mitraList={mitraList} 
             ticketsList={tickets} 
             setTicketsList={setTickets} 
+            landingSettings={landingSettings}
           />
         );
       case 'portal':
@@ -286,7 +288,7 @@ export default function App() {
       </main>
 
       {/* Footer Details */}
-      <Footer setActiveTab={setActiveTab} />
+      <Footer setActiveTab={setActiveTab} landingSettings={landingSettings} />
     </div>
   );
 }

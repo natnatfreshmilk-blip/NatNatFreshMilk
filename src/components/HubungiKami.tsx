@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, MitraSPPG } from '../types';
-import { Phone, Mail, MapPin, Send, AlertTriangle, MessageSquare, History, Check, Clock } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, AlertTriangle, MessageSquare, History, Check, Clock, ExternalLink } from 'lucide-react';
+import { formatWhatsAppUrl } from '../utils';
 
 interface HubungiKamiProps {
   mitraList: MitraSPPG[];
   ticketsList: Ticket[];
   setTicketsList: React.Dispatch<React.SetStateAction<Ticket[]>>;
+  landingSettings?: any;
 }
 
-export default function HubungiKami({ mitraList, ticketsList, setTicketsList }: HubungiKamiProps) {
+export default function HubungiKami({ mitraList, ticketsList, setTicketsList, landingSettings }: HubungiKamiProps) {
   const [mitraId, setMitraId] = useState(() => mitraList[0]?.id || 'mitra-01');
   const [type, setType] = useState<'Kemasan Rusak' | 'Rasa Masam / Basi' | 'Suhu Rantai Dingin Naik' | 'Keterlambatan' | 'Lainnya'>('Kemasan Rusak');
   const [severity, setSeverity] = useState<'Rendah' | 'Sedang' | 'Tinggi' | 'Kritis'>('Sedang');
   const [description, setDescription] = useState('');
   
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const whatsappNum = landingSettings?.whatsappNumber || '0812-1768-7815';
 
   // Keep selected ID valid if list changes
   useEffect(() => {
@@ -82,14 +86,25 @@ export default function HubungiKami({ mitraList, ticketsList, setTicketsList }: 
             </p>
 
             <div className="space-y-4 text-xs sm:text-sm">
-              <div className="flex items-start space-x-3.5">
-                <div className="p-2.5 rounded-xl bg-sky-50 text-sky-600 shrink-0">
+              <div className="flex items-start space-x-3.5 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100 hover:bg-emerald-50 transition-all">
+                <div className="p-2.5 rounded-xl bg-emerald-500 text-white shrink-0 shadow-sm">
                   <Phone className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-xs">WhatsApp / Telepon Darurat</h4>
-                  <p className="text-slate-600 font-mono mt-0.5">0812-1768-7815</p>
-                  <span className="text-[10px] text-slate-400 block italic">Khusus Koordinator Lapangan SPPG</span>
+                <div className="flex-1">
+                  <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                    <span>WhatsApp / Telepon Hotline</span>
+                    <span className="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">Online</span>
+                  </h4>
+                  <a
+                    href={formatWhatsAppUrl(whatsappNum, 'Halo Admin NatNat Fresh Milk, saya ingin berkoordinasi seputar program SPPG...')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 font-mono font-bold text-sm hover:underline mt-0.5 flex items-center space-x-1"
+                  >
+                    <span>{whatsappNum}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                  </a>
+                  <span className="text-[10px] text-slate-500 block italic mt-0.5">Klik nomor di atas untuk langsung terhubung via WhatsApp</span>
                 </div>
               </div>
 

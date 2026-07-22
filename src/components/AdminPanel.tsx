@@ -4,9 +4,10 @@ import {
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
   HelpCircle, Sparkles, Film, Upload, Copy, Download, Code,
-  Info, ExternalLink, FileJson
+  Info, ExternalLink, FileJson, Phone
 } from 'lucide-react';
 import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo } from '../types';
+import { formatWhatsAppUrl } from '../utils';
 
 interface AdminPanelProps {
   products: Product[];
@@ -128,7 +129,10 @@ export default function AdminPanel({
   });
 
   // Landing Page Settings editing states
-  const [tempLanding, setTempLanding] = useState(landingSettings);
+  const [tempLanding, setTempLanding] = useState(() => ({
+    whatsappNumber: '0812-1768-7815',
+    ...landingSettings
+  }));
   // About Page Settings editing states
   const [tempAbout, setTempAbout] = useState(aboutSettings);
   const [misiInputString, setMisiInputString] = useState(() => aboutSettings.misiList.join('\n'));
@@ -782,8 +786,60 @@ export default function AdminPanel({
                 <div>
                   <h3 className="font-sans font-black text-lg text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100">
                     <span className="p-1.5 rounded-lg bg-sky-50 text-sky-600"><Settings className="w-4 h-4" /></span>
-                    <span>Pengaturan Teks Beranda / Landing Page</span>
+                    <span>Pengaturan Teks Beranda / Landing Page & Kontak</span>
                   </h3>
+                </div>
+
+                {/* DEDICATED WHATSAPP HOTLINE CONFIGURATION CARD */}
+                <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500 text-white shadow-sm">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-sans font-black text-slate-800 text-sm">Nomor WhatsApp Resmi / Hotline Admin</h4>
+                        <p className="text-[11px] text-emerald-800">Ubah nomor ini untuk memperbarui seluruh link WhatsApp di Beranda, Flyer Promo, Footer, & Kontak</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      Nomor WhatsApp Aktif
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    <div className="sm:col-span-8">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Nomor WhatsApp / Hotline SPPG (Format: 0812-1768-7815 / 0812xxxxxxxx)
+                      </label>
+                      <input
+                        type="text"
+                        value={tempLanding.whatsappNumber || ''}
+                        onChange={(e) => setTempLanding({ ...tempLanding, whatsappNumber: e.target.value })}
+                        placeholder="0812-1768-7815"
+                        className="w-full bg-white border border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400/30 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:outline-none shadow-sm"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-4 flex items-end">
+                      <a
+                        href={formatWhatsAppUrl(tempLanding.whatsappNumber || '0812-1768-7815', 'Tes kirim pesan dari Admin Panel NatNat Fresh Milk...')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-1.5"
+                      >
+                        <span>💬 Uji Link WA</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-600 bg-white/90 p-2.5 rounded-xl border border-emerald-100 flex items-center space-x-2 flex-wrap">
+                    <span className="font-bold text-emerald-700">Preview Link WA Tergenerasi:</span>
+                    <code className="text-[10px] font-mono text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded font-bold">
+                      {formatWhatsAppUrl(tempLanding.whatsappNumber || '0812-1768-7815')}
+                    </code>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

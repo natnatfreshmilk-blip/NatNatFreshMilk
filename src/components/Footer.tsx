@@ -1,13 +1,16 @@
 import React from 'react';
 import { Milk, Phone, Mail, MapPin, ShieldCheck, Heart } from 'lucide-react';
 import logoImg from '../assets/images/logo_1784628827555.jpg';
+import { formatWhatsAppUrl } from '../utils';
 
 interface FooterProps {
   setActiveTab: (tab: string) => void;
+  landingSettings?: any;
 }
 
-export default function Footer({ setActiveTab }: FooterProps) {
+export default function Footer({ setActiveTab, landingSettings }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  const whatsappNum = landingSettings?.whatsappNumber || '0812-1768-7815';
 
   return (
     <footer id="app-footer" className="bg-slate-900 text-slate-300 border-t border-slate-800">
@@ -73,8 +76,16 @@ export default function Footer({ setActiveTab }: FooterProps) {
                 </span>
               </li>
               <li className="flex items-center space-x-2.5">
-                <Phone className="w-4 h-4 text-sky-400" />
-                <span>0812-1768-7815 (Layanan SPPG & MBG)</span>
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <a
+                  href={formatWhatsAppUrl(whatsappNum, 'Halo Admin NatNat Fresh Milk, saya ingin menghubungi Anda dari Footer Website...')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 transition-colors font-medium flex items-center space-x-1"
+                >
+                  <span>{whatsappNum}</span>
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.2 rounded">WA</span>
+                </a>
               </li>
               <li className="flex items-center space-x-2.5">
                 <Mail className="w-4 h-4 text-sky-400" />

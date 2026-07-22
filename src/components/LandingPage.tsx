@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Milk, Award, ShieldCheck, ThermometerSnowflake, Users, ChevronRight, TrendingUp, Sparkles, AlertCircle, HelpCircle, ExternalLink, Play, Film, Image as ImageIcon, Check, Download, Printer, Heart, Info, X, Eye, ZoomIn, Maximize2 } from 'lucide-react';
+import { Milk, Award, ShieldCheck, ThermometerSnowflake, Users, ChevronRight, TrendingUp, Sparkles, AlertCircle, HelpCircle, ExternalLink, Play, Film, Image as ImageIcon, Check, Download, Printer, Heart, Info, X, Eye, ZoomIn, Maximize2, PhoneCall } from 'lucide-react';
 import { Promo } from '../types';
+import { formatWhatsAppUrl } from '../utils';
 
 interface LandingPageProps {
   setActiveTab: (tab: string) => void;
@@ -25,8 +26,11 @@ export default function LandingPage({ setActiveTab, openPortal, landingSettings,
     mitraCount: '52 Dapur',
     peternakCount: '150+ Mitra',
     freezerTitle: 'Klaim Freezer Box RSA Gratis untuk Dapur Anda!',
-    freezerDesc: 'Dapatkan fasilitas Freezer Box RSA Gratis sebagai media penyimpanan susu dingin agar senantiasa steril di titik SPPG. Cukup dengan mendaftar kemitraan suplai rutin, Freezer akan menjadi hak milik penuh dapur gizi setelah memenuhi kuota distribusi.'
+    freezerDesc: 'Dapatkan fasilitas Freezer Box RSA Gratis sebagai media penyimpanan susu dingin agar senantiasa steril di titik SPPG. Cukup dengan mendaftar kemitraan suplai rutin, Freezer akan menjadi hak milik penuh dapur gizi setelah memenuhi kuota distribusi.',
+    whatsappNumber: '0812-1768-7815'
   };
+
+  const whatsappNum = settings.whatsappNumber || '0812-1768-7815';
 
   // Simulate slowly increasing milk cup count to show real-time distribution
   useEffect(() => {
@@ -788,13 +792,13 @@ export default function LandingPage({ setActiveTab, openPortal, landingSettings,
 
                   {/* WhatsApp Direct Inquiry Button */}
                   <a
-                    href={`https://wa.me/6281234567890?text=${encodeURIComponent(`Halo Admin NatNat Fresh Milk, saya ingin bertanya tentang promo: ${selectedPromo.title}`)}`}
+                    href={formatWhatsAppUrl(whatsappNum, `Halo Admin NatNat Fresh Milk, saya ingin bertanya tentang promo: ${selectedPromo.title}`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center space-x-2"
                   >
                     <span className="text-sm">💬</span>
-                    <span>Tanya Promo via WhatsApp</span>
+                    <span>Tanya Promo via WhatsApp ({whatsappNum})</span>
                   </a>
 
                   {selectedPromo.linkUrl && (
@@ -861,6 +865,25 @@ export default function LandingPage({ setActiveTab, openPortal, landingSettings,
           </div>
         </div>
       )}
+
+      {/* Floating WhatsApp Quick Action Button */}
+      <div className="fixed bottom-6 right-6 z-40 flex items-center">
+        <a
+          href={formatWhatsAppUrl(whatsappNum, 'Halo Admin NatNat Fresh Milk, saya ingin bertanya seputar produk & kemitraan SPPG...')}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center space-x-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-full shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 border-2 border-white/20"
+          title={`Chat WhatsApp NatNat (${whatsappNum})`}
+        >
+          <span className="text-xl animate-bounce">💬</span>
+          <span className="font-extrabold text-xs sm:text-sm tracking-wide hidden sm:inline-block">
+            Chat WhatsApp ({whatsappNum})
+          </span>
+          <span className="font-extrabold text-xs sm:hidden">
+            WhatsApp
+          </span>
+        </a>
+      </div>
     </div>
   );
 }
