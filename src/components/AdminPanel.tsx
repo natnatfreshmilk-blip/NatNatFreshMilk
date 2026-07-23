@@ -2483,21 +2483,32 @@ export default function AdminPanel({
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex space-x-2 border-b border-slate-100 pb-2">
+            <div className="flex space-x-2 border-b border-slate-100 pb-2 overflow-x-auto">
               <button
                 onClick={() => setExportTab('code')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap ${
                   exportTab === 'code'
                     ? 'bg-slate-900 text-white shadow-md'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 <Code className="w-3.5 h-3.5" />
-                <span>Kode TypeScript (`src/data.ts`)</span>
+                <span>Promo & Flyer (`INITIAL_PROMOS`)</span>
+              </button>
+              <button
+                onClick={() => setExportTab('landing')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap ${
+                  exportTab === 'landing'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Pengaturan WA & Beranda (`INITIAL_LANDING_SETTINGS`)</span>
               </button>
               <button
                 onClick={() => setExportTab('json')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap ${
                   exportTab === 'json'
                     ? 'bg-slate-900 text-white shadow-md'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -2537,21 +2548,54 @@ export default function AdminPanel({
                     }`}
                   >
                     {copiedSuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedSuccess ? 'Berhasil Disalin!' : 'Salin Kode TS'}</span>
+                    <span>{copiedSuccess ? 'Berhasil Disalin!' : 'Salin Kode Promo TS'}</span>
                   </button>
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-[11px] text-slate-600">
                   <p className="font-bold text-slate-800 flex items-center space-x-1">
                     <Info className="w-4 h-4 text-sky-500" />
-                    <span>Langkah Mudah Agar Foto Tampil Permanen di Vercel:</span>
+                    <span>Langkah Mudah Agar Foto & Data Tampil Permanen di Vercel:</span>
                   </p>
                   <ol className="list-decimal pl-4 space-y-1 font-normal">
-                    <li>Klik tombol <strong className="text-slate-800">"Salin Kode TS"</strong> di atas.</li>
+                    <li>Klik tombol <strong className="text-slate-800">"Salin Kode Promo TS"</strong> di atas.</li>
                     <li>Buka repository GitHub Anda dan edit file <strong className="text-slate-800">src/data.ts</strong>.</li>
                     <li>Ganti variabel <strong className="text-slate-800">export const INITIAL_PROMOS = [...]</strong> dengan kode yang baru Anda salin.</li>
-                    <li>Simpan (Commit changes) di GitHub. Vercel secara otomatis akan memuat foto flyer & promo terbaru untuk seluruh pengunjung web!</li>
+                    <li>Simpan (Commit changes) di GitHub. Vercel secara otomatis akan memuat foto flyer & promo terbaru untuk seluruh pengunjung di perangkat apa saja!</li>
                   </ol>
+                </div>
+              </div>
+            ) : exportTab === 'landing' ? (
+              <div className="space-y-4 text-xs">
+                <div className="bg-slate-900 text-slate-200 rounded-2xl p-4 font-mono text-[10px] relative max-h-60 overflow-y-auto border border-slate-800 shadow-inner">
+                  <pre className="whitespace-pre-wrap break-all leading-relaxed">
+{`export const INITIAL_LANDING_SETTINGS = ${JSON.stringify(tempLanding, null, 2)};`}
+                  </pre>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-emerald-50 border border-emerald-100 p-3 rounded-2xl">
+                  <div className="text-emerald-900 text-[11px] font-medium">
+                    <span className="font-bold block">1-Klik Salin Kode WhatsApp & Landing Settings:</span>
+                    Salin kode di atas lalu buka file <span className="font-mono bg-emerald-100 text-emerald-950 px-1 py-0.5 rounded">src/data.ts</span> di GitHub untuk memperbarui nilai <span className="font-mono font-bold">INITIAL_LANDING_SETTINGS</span>.
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const code = `export const INITIAL_LANDING_SETTINGS = ${JSON.stringify(tempLanding, null, 2)};`;
+                      navigator.clipboard.writeText(code);
+                      setCopiedSuccess(true);
+                      triggerNotification('Kode INITIAL_LANDING_SETTINGS berhasil disalin!');
+                      setTimeout(() => setCopiedSuccess(false), 3000);
+                    }}
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs shrink-0 transition-all flex items-center space-x-1.5 shadow-md ${
+                      copiedSuccess 
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    }`}
+                  >
+                    {copiedSuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedSuccess ? 'Berhasil Disalin!' : 'Salin Kode Pengaturan TS'}</span>
+                  </button>
                 </div>
               </div>
             ) : (
