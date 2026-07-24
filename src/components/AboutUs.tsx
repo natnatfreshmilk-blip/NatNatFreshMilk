@@ -17,9 +17,10 @@ import { CertificationItem } from '../types';
 
 interface AboutUsProps {
   aboutSettings?: any;
+  certifications?: CertificationItem[];
 }
 
-export default function AboutUs({ aboutSettings }: AboutUsProps) {
+export default function AboutUs({ aboutSettings, certifications: certsProp }: AboutUsProps) {
   const [selectedPreviewDoc, setSelectedPreviewDoc] = useState<CertificationItem | null>(null);
 
   const settings = aboutSettings || {
@@ -74,9 +75,11 @@ export default function AboutUs({ aboutSettings }: AboutUsProps) {
   ];
 
   const certifications: CertificationItem[] = 
-    settings.certificationsList && settings.certificationsList.length > 0 
-      ? settings.certificationsList 
-      : defaultCertifications;
+    Array.isArray(certsProp)
+      ? certsProp
+      : (settings && Array.isArray(settings.certificationsList)
+          ? settings.certificationsList 
+          : defaultCertifications);
 
   const handleDownloadFile = (docItem: CertificationItem) => {
     if (!docItem.fileUrl) return;

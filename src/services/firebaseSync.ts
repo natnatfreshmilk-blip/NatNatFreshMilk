@@ -86,7 +86,9 @@ export function subscribeToDocument<T>(
     }
 
     if (snapshot.exists()) {
-      onUpdate(snapshot.data() as T);
+      const docData = snapshot.data();
+      const mergedData = initialDefault ? { ...initialDefault, ...docData } : docData;
+      onUpdate(mergedData as T);
     }
   }, (error) => {
     console.error(`[Firebase] Error subscribing to 'settings/${docName}':`, error);

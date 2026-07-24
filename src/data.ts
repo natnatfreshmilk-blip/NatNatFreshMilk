@@ -1,4 +1,4 @@
-import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo } from './types';
+import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo, CertificationItem } from './types';
 
 export const PRODUCTS: Product[] = [
   {
@@ -346,6 +346,39 @@ export const INITIAL_PROMOS: Promo[] = [
     linkUrl: 'katalog',
     buttonText: 'Lihat Brosur Edukasi',
     isActive: true
+  }
+];
+
+export const INITIAL_CERTS: CertificationItem[] = [
+  {
+    id: 'cert-1',
+    badge: 'BPJPH INDONESIA',
+    title: 'Sertifikat Halal Resmi',
+    docNumber: 'ID35110000214820323',
+    description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
+    fileUrl: '',
+    fileName: '',
+    fileType: 'pdf'
+  },
+  {
+    id: 'cert-2',
+    badge: 'BADAN POM RI',
+    title: 'Izin Edar Pangan Olahan',
+    docNumber: 'MD 241031001099',
+    description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.',
+    fileUrl: '',
+    fileName: '',
+    fileType: 'pdf'
+  },
+  {
+    id: 'cert-3',
+    badge: 'MUTU ISO 22000',
+    title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+    docNumber: 'ISO 22000:2018 Certified',
+    description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.',
+    fileUrl: '',
+    fileName: '',
+    fileType: 'pdf'
   }
 ];
 

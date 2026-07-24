@@ -23,9 +23,10 @@ import {
   INITIAL_ORDERS,
   INITIAL_DELIVERIES,
   INITIAL_TICKETS,
-  INITIAL_PROMOS
+  INITIAL_PROMOS,
+  INITIAL_CERTS
 } from './data';
-import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo } from './types';
+import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo, CertificationItem } from './types';
 import { 
   subscribeToCollection, 
   subscribeToDocument, 
@@ -139,17 +140,35 @@ export default function App() {
 
   const [landingSettings, setLandingSettings] = useState<any>(() => {
     const cached = localStorage.getItem('natnat_landing_settings');
-    return cached ? JSON.parse(cached) : defaultLandingSettings;
+    if (cached) {
+      try {
+        return { ...defaultLandingSettings, ...JSON.parse(cached) };
+      } catch (e) {}
+    }
+    return defaultLandingSettings;
   });
 
   const [aboutSettings, setAboutSettings] = useState<any>(() => {
     const cached = localStorage.getItem('natnat_about_settings');
-    return cached ? JSON.parse(cached) : defaultAboutSettings;
+    if (cached) {
+      try {
+        return { ...defaultAboutSettings, ...JSON.parse(cached) };
+      } catch (e) {}
+    }
+    return defaultAboutSettings;
   });
 
   const [promos, setPromos] = useState<Promo[]>(() => {
     const cached = localStorage.getItem('natnat_promos');
     return cached ? JSON.parse(cached) : INITIAL_PROMOS;
+  });
+
+  const [certifications, setCertifications] = useState<CertificationItem[]>(() => {
+    const cached = localStorage.getItem('natnat_certifications');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    return INITIAL_CERTS;
   });
 
   // Real-time Firebase Firestore subscriptions
@@ -162,6 +181,7 @@ export default function App() {
     const unsubDeliveries = subscribeToCollection<DeliveryLog>('deliveries', setDeliveries, INITIAL_DELIVERIES);
     const unsubTickets = subscribeToCollection<Ticket>('tickets', setTickets, INITIAL_TICKETS);
     const unsubPromos = subscribeToCollection<Promo>('promos', setPromos, INITIAL_PROMOS);
+    const unsubCerts = subscribeToCollection<CertificationItem>('certifications', setCertifications, INITIAL_CERTS);
     const unsubLanding = subscribeToDocument<any>('landingSettings', setLandingSettings, defaultLandingSettings);
     const unsubAbout = subscribeToDocument<any>('aboutSettings', setAboutSettings, defaultAboutSettings);
 
@@ -174,6 +194,7 @@ export default function App() {
       unsubDeliveries();
       unsubTickets();
       unsubPromos();
+      unsubCerts();
       unsubLanding();
       unsubAbout();
     };
@@ -240,6 +261,15 @@ export default function App() {
     setPromos((prev) => {
       const next = typeof action === 'function' ? action(prev) : action;
       syncCollectionToFirestore('promos', next);
+      return next;
+    });
+  };
+
+  const handleSetCertifications: React.Dispatch<React.SetStateAction<CertificationItem[]>> = (action) => {
+    setCertifications((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('certifications', next);
+      try { localStorage.setItem('natnat_certifications', JSON.stringify(next)); } catch (e) {}
       return next;
     });
   };
@@ -313,7 +343,7 @@ export default function App() {
           />
         );
       case 'tentang':
-        return <AboutUs aboutSettings={aboutSettings} />;
+        return <AboutUs aboutSettings={aboutSettings} certifications={certifications} />;
       case 'katalog':
         return <KatalogProduk products={products} />;
       case 'lacak':
@@ -365,6 +395,8 @@ export default function App() {
             setAboutSettings={handleSetAboutSettings}
             promos={promos}
             setPromos={handleSetPromos}
+            certifications={certifications}
+            setCertifications={handleSetCertifications}
           />
         );
       default:

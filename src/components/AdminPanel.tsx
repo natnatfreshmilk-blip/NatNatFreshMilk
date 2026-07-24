@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Lock, KeyRound, Save, Plus, Edit, Trash2, CheckCircle, 
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem } from '../types';
 import { formatWhatsAppUrl } from '../utils';
+import { saveItemToFirestore, deleteItemFromFirestore, syncCollectionToFirestore } from '../services/firebaseSync';
 
 interface AdminPanelProps {
   products: Product[];
@@ -28,6 +29,8 @@ interface AdminPanelProps {
   setAboutSettings: (settings: any) => void;
   promos: Promo[];
   setPromos: React.Dispatch<React.SetStateAction<Promo[]>>;
+  certifications?: CertificationItem[];
+  setCertifications?: React.Dispatch<React.SetStateAction<CertificationItem[]>>;
 }
 
 type AdminTab = 'beranda_tentang' | 'promos' | 'produk' | 'artikel' | 'lab_reports' | 'mitra' | 'orders_tickets';
@@ -41,7 +44,8 @@ export default function AdminPanel({
   tickets, setTickets,
   landingSettings, setLandingSettings,
   aboutSettings, setAboutSettings,
-  promos, setPromos
+  promos, setPromos,
+  certifications, setCertifications
 }: AdminPanelProps) {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -128,14 +132,136 @@ export default function AdminPanel({
     dailyQuota: 500
   });
 
+  // Default fallbacks for Landing & About settings
+  const DEFAULT_CERTS: CertificationItem[] = [
+    {
+      id: 'cert-1',
+      badge: 'BPJPH INDONESIA',
+      title: 'Sertifikat Halal Resmi',
+      docNumber: 'ID35110000214820323',
+      description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
+      fileUrl: '',
+      fileName: '',
+      fileType: 'pdf'
+    },
+    {
+      id: 'cert-2',
+      badge: 'BADAN POM RI',
+      title: 'Izin Edar Pangan Olahan',
+      docNumber: 'MD 241031001099',
+      description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.',
+      fileUrl: '',
+      fileName: '',
+      fileType: 'pdf'
+    },
+    {
+      id: 'cert-3',
+      badge: 'MUTU ISO 22000',
+      title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+      docNumber: 'ISO 22000:2018 Certified',
+      description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.',
+      fileUrl: '',
+      fileName: '',
+      fileType: 'pdf'
+    }
+  ];
+
+  const defaultLanding = {
+    heroTitle: 'Susu Pasteurisasi Segar & Higienis untuk Anak Bangsa',
+    heroSubtitle: 'Kami memahami pentingnya gizi seimbang harian anak sekolah. Melalui filosofi layanan "Urusan Susu? Serahkan Pada Kami!", NatNat Fresh Milk siap menyuplai kebutuhan dapur SPPG dengan standar rantai dingin terjamin.',
+    campaignTitle: 'Kampanye Gizi Nasional:',
+    campaignSlogan: '"Menu MBG Belum Lengkap Tanpa Susu!"',
+    campaignDesc: 'Mengandung Kalsium Tinggi, Protein Alami, dan Tanpa Bahan Pengawet Buatan.',
+    mitraCount: '52 Dapur',
+    peternakCount: '150+ Mitra',
+    freezerTitle: 'Klaim Freezer Box RSA Gratis untuk Dapur Anda!',
+    freezerDesc: 'Dapatkan fasilitas Freezer Box RSA Gratis sebagai media penyimpanan susu dingin agar senantiasa steril di titik SPPG. Cukup dengan mendaftar kemitraan suplai rutin, Freezer akan menjadi hak milik penuh dapur gizi setelah memenuhi kuota distribusi.',
+    whatsappNumber: '0812-1768-7815'
+  };
+
+  const defaultAbout = {
+    profilTitle: 'PT Satriyo Abimanyu Prabangkara',
+    profilDesc: 'Kami adalah industri pengolahan susu pasteurisasi modern yang berkedudukan di Singosari, Malang, Jawa Timur. Didirikan dengan komitmen kuat untuk memajukan peternakan lokal Jawa Timur dan menyuplai kebutuhan pangan bergizi tinggi berskala nasional.',
+    capacityTitle: 'Kapasitas Produksi Harian',
+    capacityValue: '15.000+ Cup / Hari',
+    capacityDesc: 'Fasilitas pasteurisasi kontinu modern berskala industri kecil-menengah siap mendukung pemenuhan gizi massal.',
+    hygieneValue: 'HACCP & GMP Compliant',
+    sourcingValue: '100% Sapi Perah Malang',
+    visiTitle: 'Visi Khusus Program Gizi',
+    visiDesc: 'Menjadi pilar penyuplai utama susu pasteurisasi berkualitas terbaik yang terpercaya dan terintegrasi di Indonesia, guna mewujudkan generasi masa depan yang bebas stunting, sehat, cerdas, dan tangguh menyongsong Indonesia Emas 2045.',
+    misiList: [
+      'Mempertahankan kemurnian 100% susu sapi murni tanpa penambahan air atau zat pengental.',
+      'Menjaga suhu rantai dingin (cold chain) stabil dibawah 4°C dari pemelukan sapi hingga meja konsumsi.',
+      'Menerapkan digitalisasi logistik transparan untuk mendeteksi dini setiap kendala kualitas.',
+      'Meringankan beban dapur SPPG dengan komitmen servis prima "Urusan Susu? Serahkan Pada Kami!"'
+    ],
+    certificationsList: DEFAULT_CERTS
+  };
+
+  // Helper to safely get certifications list
+  const getCertList = (): CertificationItem[] => {
+    if (Array.isArray(certifications)) {
+      return certifications;
+    }
+    if (tempAbout && Array.isArray(tempAbout.certificationsList)) {
+      return tempAbout.certificationsList;
+    }
+    if (aboutSettings && Array.isArray(aboutSettings.certificationsList)) {
+      return aboutSettings.certificationsList;
+    }
+    return DEFAULT_CERTS;
+  };
+
   // Landing Page Settings editing states
-  const [tempLanding, setTempLanding] = useState(() => ({
-    whatsappNumber: '0812-1768-7815',
-    ...landingSettings
+  const [tempLanding, setTempLanding] = useState<any>(() => ({
+    ...defaultLanding,
+    ...(landingSettings && typeof landingSettings === 'object' ? landingSettings : {})
   }));
+
   // About Page Settings editing states
-  const [tempAbout, setTempAbout] = useState(aboutSettings);
-  const [misiInputString, setMisiInputString] = useState(() => aboutSettings.misiList ? aboutSettings.misiList.join('\n') : '');
+  const [tempAbout, setTempAbout] = useState<any>(() => {
+    const initialCerts = (aboutSettings && Array.isArray(aboutSettings.certificationsList))
+      ? aboutSettings.certificationsList
+      : DEFAULT_CERTS;
+    return {
+      ...defaultAbout,
+      ...(aboutSettings && typeof aboutSettings === 'object' ? aboutSettings : {}),
+      certificationsList: initialCerts
+    };
+  });
+
+  const [misiInputString, setMisiInputString] = useState<string>(() => {
+    const list = (aboutSettings && Array.isArray(aboutSettings.misiList)) ? aboutSettings.misiList : defaultAbout.misiList;
+    return list.join('\n');
+  });
+
+  // Keep temp states synchronized when props update from Firestore
+  useEffect(() => {
+    if (aboutSettings && typeof aboutSettings === 'object') {
+      setTempAbout((prev: any) => {
+        const mergedCerts = Array.isArray(aboutSettings.certificationsList)
+          ? aboutSettings.certificationsList
+          : (Array.isArray(prev?.certificationsList) ? prev.certificationsList : DEFAULT_CERTS);
+
+        return {
+          ...defaultAbout,
+          ...prev,
+          ...aboutSettings,
+          certificationsList: mergedCerts
+        };
+      });
+
+      if (aboutSettings.misiList && Array.isArray(aboutSettings.misiList)) {
+        setMisiInputString(aboutSettings.misiList.join('\n'));
+      }
+    }
+  }, [aboutSettings]);
+
+  useEffect(() => {
+    if (landingSettings && typeof landingSettings === 'object') {
+      setTempLanding((prev: any) => ({ ...defaultLanding, ...prev, ...landingSettings }));
+    }
+  }, [landingSettings]);
 
   // Certification Item Modal State
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
@@ -610,22 +736,106 @@ export default function AdminPanel({
   // SAVE CORE PAGE COPY/SETTINGS
   const handleSaveLandingSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    const confirmSave = window.confirm('Apakah Anda yakin ingin menyimpan perubahan Pengaturan Landing Page?');
+    if (!confirmSave) return;
+
     setLandingSettings(tempLanding);
-    localStorage.setItem('natnat_landing_settings_v2', JSON.stringify(tempLanding));
+    try {
+      localStorage.setItem('natnat_landing_settings', JSON.stringify(tempLanding));
+    } catch (err) {}
     triggerNotification('Pengaturan Landing Page berhasil disimpan!');
   };
 
   const handleSaveAboutSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    const confirmSave = window.confirm('Apakah Anda yakin ingin menyimpan perubahan Profil, Visi Misi, dan Sertifikasi?');
+    if (!confirmSave) return;
+
     const splitMisi = misiInputString.split('\n').map(l => l.trim()).filter(Boolean);
+    const certsToSave = getCertList();
     const updatedAbout = {
       ...tempAbout,
       misiList: splitMisi,
-      certificationsList: tempAbout.certificationsList || []
+      certificationsList: certsToSave
     };
+
+    if (setCertifications) {
+      setCertifications(certsToSave);
+      syncCollectionToFirestore('certifications', certsToSave);
+    }
+
+    setTempAbout(updatedAbout);
     setAboutSettings(updatedAbout);
-    localStorage.setItem('natnat_about_settings_v2', JSON.stringify(updatedAbout));
+    try {
+      localStorage.setItem('natnat_about_settings', JSON.stringify(updatedAbout));
+    } catch (err) {
+      console.error('LocalStorage save error:', err);
+    }
     triggerNotification('Profil, Visi Misi, & Sertifikasi berhasil disimpan!');
+  };
+
+  // Helper for compressing image and handling PDF file size
+  const processCertFileUpload = (
+    file: File, 
+    onSuccess: (result: { fileUrl: string; fileName: string; fileType: 'pdf' | 'image' }) => void
+  ) => {
+    const isPdf = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+
+    if (isPdf) {
+      if (file.size > 600 * 1024) {
+        alert(`Ukuran file PDF (${(file.size / 1024).toFixed(0)} KB) terlalu besar. Maksimum 600 KB per file agar dapat disimpan dengan aman di database. Silakan kompres PDF Anda terlebih dahulu.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSuccess({
+          fileUrl: reader.result as string,
+          fileName: file.name,
+          fileType: 'pdf'
+        });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.8);
+            onSuccess({
+              fileUrl: compressed,
+              fileName: file.name,
+              fileType: 'image'
+            });
+          } else {
+            onSuccess({
+              fileUrl: e.target?.result as string,
+              fileName: file.name,
+              fileType: 'image'
+            });
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Certification CRUD Handlers
@@ -664,39 +874,15 @@ export default function AdminPanel({
       return;
     }
 
+    const confirmSave = window.confirm(`Apakah Anda yakin ingin menyimpan data sertifikat "${certForm.title}"?`);
+    if (!confirmSave) return;
+
     const certData: CertificationItem = {
       id: editingCert ? editingCert.id : `cert-${Date.now()}`,
       ...certForm
     };
 
-    const defaultCerts: CertificationItem[] = [
-      {
-        id: 'cert-1',
-        badge: 'BPJPH INDONESIA',
-        title: 'Sertifikat Halal Resmi',
-        docNumber: 'ID35110000214820323',
-        description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.'
-      },
-      {
-        id: 'cert-2',
-        badge: 'BADAN POM RI',
-        title: 'Izin Edar Pangan Olahan',
-        docNumber: 'MD 241031001099',
-        description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.'
-      },
-      {
-        id: 'cert-3',
-        badge: 'MUTU ISO 22000',
-        title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
-        docNumber: 'ISO 22000:2018 Certified',
-        description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.'
-      }
-    ];
-
-    const currentList: CertificationItem[] = 
-      tempAbout.certificationsList && tempAbout.certificationsList.length > 0 
-        ? tempAbout.certificationsList 
-        : defaultCerts;
+    const currentList = getCertList();
 
     let updatedList: CertificationItem[];
     if (editingCert) {
@@ -707,6 +893,11 @@ export default function AdminPanel({
       triggerNotification('Sertifikat / Dokumen Regulasi baru ditambahkan!');
     }
 
+    if (setCertifications) {
+      setCertifications(updatedList);
+      saveItemToFirestore('certifications', certData);
+    }
+
     const updatedAbout = {
       ...tempAbout,
       certificationsList: updatedList
@@ -714,40 +905,48 @@ export default function AdminPanel({
 
     setTempAbout(updatedAbout);
     setAboutSettings(updatedAbout);
+    try {
+      localStorage.setItem('natnat_about_settings', JSON.stringify(updatedAbout));
+    } catch (err) {
+      console.error('LocalStorage save error:', err);
+    }
     setIsCertModalOpen(false);
   };
 
   const handleDeleteCert = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus dokumen sertifikasi ini?')) {
-      const currentList: CertificationItem[] = tempAbout.certificationsList || [];
+    const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus dokumen sertifikasi ini?');
+    if (confirmDelete) {
+      const currentList = getCertList();
       const updatedList = currentList.filter(c => c.id !== id);
+
+      if (setCertifications) {
+        setCertifications(updatedList);
+        deleteItemFromFirestore('certifications', id);
+      }
+
       const updatedAbout = {
         ...tempAbout,
         certificationsList: updatedList
       };
       setTempAbout(updatedAbout);
       setAboutSettings(updatedAbout);
+      try {
+        localStorage.setItem('natnat_about_settings', JSON.stringify(updatedAbout));
+      } catch (err) {
+        console.error('LocalStorage save error:', err);
+      }
       triggerNotification('Sertifikasi berhasil dihapus!');
     }
   };
 
   const handleCertFileUpload = (file: File) => {
-    if (file.size > 15 * 1024 * 1024) {
-      alert('Ukuran file terlalu besar. Maksimum 15MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const isPdf = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+    processCertFileUpload(file, (res) => {
       setCertForm(prev => ({
         ...prev,
-        fileUrl: reader.result as string,
-        fileName: file.name,
-        fileType: isPdf ? 'pdf' : 'image'
+        ...res
       }));
-      triggerNotification(`File ${file.name} berhasil diunggah!`);
-    };
-    reader.readAsDataURL(file);
+      triggerNotification(`File ${res.fileName} berhasil diunggah!`);
+    });
   };
 
   // ORDERS & COMPLAINTS WORKFLOW
@@ -987,7 +1186,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Judul Utama Hero (Landing Title)</label>
                     <input
                       type="text"
-                      value={tempLanding.heroTitle}
+                      value={tempLanding?.heroTitle || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, heroTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5 focus:outline-none"
                     />
@@ -997,7 +1196,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Sub-judul Deskripsi Hero</label>
                     <textarea
                       rows={3}
-                      value={tempLanding.heroSubtitle}
+                      value={tempLanding?.heroSubtitle || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, heroSubtitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5 focus:outline-none"
                     />
@@ -1007,7 +1206,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kampanye Gizi Title</label>
                     <input
                       type="text"
-                      value={tempLanding.campaignTitle}
+                      value={tempLanding?.campaignTitle || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, campaignTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1017,7 +1216,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kampanye Gizi Slogan</label>
                     <input
                       type="text"
-                      value={tempLanding.campaignSlogan}
+                      value={tempLanding?.campaignSlogan || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, campaignSlogan: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1027,7 +1226,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kampanye Gizi Detail</label>
                     <input
                       type="text"
-                      value={tempLanding.campaignDesc}
+                      value={tempLanding?.campaignDesc || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, campaignDesc: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1037,7 +1236,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Stat: Jumlah Kemitraan Dapur</label>
                     <input
                       type="text"
-                      value={tempLanding.mitraCount}
+                      value={tempLanding?.mitraCount || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, mitraCount: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1047,7 +1246,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Stat: Jumlah Peternak Lokal</label>
                     <input
                       type="text"
-                      value={tempLanding.peternakCount}
+                      value={tempLanding?.peternakCount || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, peternakCount: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1057,7 +1256,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Judul Penawaran Freezer Box</label>
                     <input
                       type="text"
-                      value={tempLanding.freezerTitle}
+                      value={tempLanding?.freezerTitle || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, freezerTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1067,7 +1266,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Keterangan Penawaran Freezer Box</label>
                     <textarea
                       rows={2}
-                      value={tempLanding.freezerDesc}
+                      value={tempLanding?.freezerDesc || ''}
                       onChange={(e) => setTempLanding({ ...tempLanding, freezerDesc: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5 focus:outline-none"
                     />
@@ -1099,7 +1298,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Nama Perusahaan / Judul Profil</label>
                     <input
                       type="text"
-                      value={tempAbout.profilTitle}
+                      value={tempAbout?.profilTitle || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, profilTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1109,7 +1308,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Deskripsi Lengkap Profil</label>
                     <textarea
                       rows={4}
-                      value={tempAbout.profilDesc}
+                      value={tempAbout?.profilDesc || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, profilDesc: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5 focus:outline-none"
                     />
@@ -1119,7 +1318,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kapasitas Produksi - Judul</label>
                     <input
                       type="text"
-                      value={tempAbout.capacityTitle}
+                      value={tempAbout?.capacityTitle || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, capacityTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1129,7 +1328,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kapasitas Produksi - Nilai</label>
                     <input
                       type="text"
-                      value={tempAbout.capacityValue}
+                      value={tempAbout?.capacityValue || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, capacityValue: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1139,7 +1338,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kapasitas Produksi - Deskripsi</label>
                     <input
                       type="text"
-                      value={tempAbout.capacityDesc}
+                      value={tempAbout?.capacityDesc || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, capacityDesc: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1149,7 +1348,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Kebersihan Pabrik - Nilai</label>
                     <input
                       type="text"
-                      value={tempAbout.hygieneValue}
+                      value={tempAbout?.hygieneValue || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, hygieneValue: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1159,7 +1358,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Sumber Bahan Baku - Nilai</label>
                     <input
                       type="text"
-                      value={tempAbout.sourcingValue}
+                      value={tempAbout?.sourcingValue || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, sourcingValue: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1169,7 +1368,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Judul Visi Utama</label>
                     <input
                       type="text"
-                      value={tempAbout.visiTitle}
+                      value={tempAbout?.visiTitle || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, visiTitle: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5"
                     />
@@ -1179,7 +1378,7 @@ export default function AdminPanel({
                     <label className="block font-bold text-slate-700 mb-1">Isi Visi Utama</label>
                     <textarea
                       rows={2}
-                      value={tempAbout.visiDesc}
+                      value={tempAbout?.visiDesc || ''}
                       onChange={(e) => setTempAbout({ ...tempAbout, visiDesc: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-lg p-2.5 focus:outline-none"
                     />
@@ -1226,120 +1425,111 @@ export default function AdminPanel({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    {((tempAbout.certificationsList && tempAbout.certificationsList.length > 0) 
-                      ? tempAbout.certificationsList 
-                      : [
-                          {
-                            id: 'cert-1',
-                            badge: 'BPJPH INDONESIA',
-                            title: 'Sertifikat Halal Resmi',
-                            docNumber: 'ID35110000214820323',
-                            description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.'
-                          },
-                          {
-                            id: 'cert-2',
-                            badge: 'BADAN POM RI',
-                            title: 'Izin Edar Pangan Olahan',
-                            docNumber: 'MD 241031001099',
-                            description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.'
-                          },
-                          {
-                            id: 'cert-3',
-                            badge: 'MUTU ISO 22000',
-                            title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
-                            docNumber: 'ISO 22000:2018 Certified',
-                            description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.'
-                          }
-                        ]
-                    ).map((cert: CertificationItem) => {
-                      const hasFile = Boolean(cert.fileUrl);
-                      const isPdf = cert.fileType === 'pdf' || (cert.fileUrl && cert.fileUrl.startsWith('data:application/pdf'));
+                    {getCertList().length === 0 ? (
+                      <div className="sm:col-span-2 text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                        <ShieldCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500 font-bold">Belum ada dokumen sertifikasi / legalitas.</p>
+                        <p className="text-[11px] text-slate-400">Klik "Tambah Sertifikat Baru" untuk menambahkan dokumen.</p>
+                      </div>
+                    ) : (
+                      getCertList().map((cert: CertificationItem) => {
+                        const hasFile = Boolean(cert.fileUrl);
+                        const isPdf = cert.fileType === 'pdf' || (cert.fileUrl && cert.fileUrl.startsWith('data:application/pdf'));
 
-                      return (
-                        <div key={cert.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
-                                {cert.badge}
-                              </span>
-                              {hasFile ? (
-                                <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
-                                  <FileCheck className="w-3 h-3" />
-                                  <span>{isPdf ? 'PDF' : 'Gambar JPG/PNG'}</span>
+                        return (
+                          <div key={cert.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
+                                  {cert.badge}
                                 </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 italic">Belum ada file</span>
+                                {hasFile ? (
+                                  <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
+                                    <FileCheck className="w-3 h-3" />
+                                    <span>{isPdf ? 'PDF' : 'Gambar JPG/PNG'}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Belum ada file</span>
+                                )}
+                              </div>
+                              <h5 className="font-bold text-slate-800 text-sm">{cert.title}</h5>
+                              {cert.docNumber && (
+                                <p className="text-[11px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">
+                                  No: {cert.docNumber}
+                                </p>
                               )}
-                            </div>
-                            <h5 className="font-bold text-slate-800 text-sm">{cert.title}</h5>
-                            {cert.docNumber && (
-                              <p className="text-[11px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">
-                                No: {cert.docNumber}
-                              </p>
-                            )}
-                            <p className="text-[11px] text-slate-500 line-clamp-2">{cert.description}</p>
-                          </div>
-
-                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
-                            <div className="flex items-center space-x-1">
-                              <button
-                                type="button"
-                                onClick={() => openEditCert(cert)}
-                                className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center space-x-1"
-                                title="Edit data sertifikat"
-                              >
-                                <Edit className="w-3.5 h-3.5 text-sky-600" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteCert(cert.id)}
-                                className="p-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold flex items-center space-x-1"
-                                title="Hapus sertifikat"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Hapus</span>
-                              </button>
+                              <p className="text-[11px] text-slate-500 line-clamp-2">{cert.description}</p>
                             </div>
 
-                            <label className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold flex items-center space-x-1 cursor-pointer">
-                              <FileUp className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>{hasFile ? 'Ganti File' : 'Upload File'}</span>
-                              <input
-                                type="file"
-                                accept="application/pdf,image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => {
-                                      const isFilePdf = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
-                                      const updatedList = (tempAbout.certificationsList || []).map((c: CertificationItem) => 
-                                        c.id === cert.id ? {
-                                          ...c,
-                                          fileUrl: reader.result as string,
-                                          fileName: file.name,
-                                          fileType: isFilePdf ? 'pdf' : 'image'
-                                        } : c
-                                      );
-                                      const updatedAbout = {
-                                        ...tempAbout,
-                                        certificationsList: updatedList
-                                      };
-                                      setTempAbout(updatedAbout);
-                                      setAboutSettings(updatedAbout);
-                                      triggerNotification(`File ${file.name} berhasil diunggah untuk ${cert.title}!`);
-                                    };
-                                    reader.readAsDataURL(file);
-                                  }
-                                }}
-                              />
-                            </label>
+                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditCert(cert)}
+                                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center space-x-1"
+                                  title="Edit data sertifikat"
+                                >
+                                  <Edit className="w-3.5 h-3.5 text-sky-600" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCert(cert.id)}
+                                  className="p-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold flex items-center space-x-1"
+                                  title="Hapus sertifikat"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Hapus</span>
+                                </button>
+                              </div>
+
+                              <label className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold flex items-center space-x-1 cursor-pointer">
+                                <FileUp className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>{hasFile ? 'Ganti File' : 'Upload File'}</span>
+                                <input
+                                  type="file"
+                                  accept="application/pdf,image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      processCertFileUpload(file, (res) => {
+                                        const confirmUpload = window.confirm(`Apakah Anda yakin ingin mengunggah file "${res.fileName}" untuk ${cert.title}?`);
+                                        if (!confirmUpload) return;
+
+                                        const currentList = getCertList();
+                                        const updatedCert = { ...cert, ...res };
+                                        const updatedList = currentList.map((c: CertificationItem) => 
+                                          c.id === cert.id ? updatedCert : c
+                                        );
+
+                                        if (setCertifications) {
+                                          setCertifications(updatedList);
+                                          saveItemToFirestore('certifications', updatedCert);
+                                        }
+
+                                        const updatedAbout = {
+                                          ...tempAbout,
+                                          certificationsList: updatedList
+                                        };
+                                        setTempAbout(updatedAbout);
+                                        setAboutSettings(updatedAbout);
+                                        try {
+                                          localStorage.setItem('natnat_about_settings', JSON.stringify(updatedAbout));
+                                        } catch (err) {
+                                          console.error('LocalStorage save error:', err);
+                                        }
+                                        triggerNotification(`File ${res.fileName} berhasil diunggah untuk ${cert.title}!`);
+                                      });
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
