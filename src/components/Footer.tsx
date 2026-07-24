@@ -25,7 +25,7 @@ export default function Footer({ setActiveTab, landingSettings }: FooterProps) {
               <img 
                 src={logoImg} 
                 alt="NatNat Fresh Milk" 
-                className="h-14 w-auto object-contain bg-white p-1 rounded-xl shadow-md border border-slate-700/30 hover:scale-102 transition-transform duration-300"
+                className="h-20 sm:h-24 md:h-28 w-auto object-contain bg-white p-1.5 rounded-2xl shadow-md border border-slate-700/30 hover:scale-105 transition-transform duration-300"
                 referrerPolicy="no-referrer"
               />
             </div>

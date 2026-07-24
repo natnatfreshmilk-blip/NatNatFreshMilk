@@ -40,16 +40,16 @@ export default function Header({ activeTab, setActiveTab, openPortal }: HeaderPr
   return (
     <header id="app-header" className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-24">
+        <div className="flex justify-between items-center min-h-[100px] h-28 md:h-32 py-2">
           {/* Logo Brand */}
           <div 
-            className="flex items-center cursor-pointer"
+            className="flex items-center cursor-pointer py-1"
             onClick={() => { handleNavigation('beranda'); }}
           >
             <img 
               src={logoImg} 
               alt="NatNat Fresh Milk" 
-              className="h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform duration-300"
+              className="h-20 sm:h-24 md:h-28 lg:h-32 max-h-[120px] w-auto object-contain hover:scale-105 transition-transform duration-300"
               referrerPolicy="no-referrer"
             />
           </div>
@@ -131,7 +131,7 @@ export default function Header({ activeTab, setActiveTab, openPortal }: HeaderPr
 
       {/* Mobile Navigation Panel */}
       {isOpen && (
-        <div id="mobile-navigation" className="lg:hidden absolute top-20 left-0 w-full bg-white border-b border-slate-100 shadow-lg py-4 px-6 space-y-2 animate-in slide-in-from-top-4 duration-200">
+        <div id="mobile-navigation" className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-lg py-4 px-6 space-y-2 animate-in slide-in-from-top-4 duration-200">
           {menuItems.map((item) => (
             <button
               key={item.id}
