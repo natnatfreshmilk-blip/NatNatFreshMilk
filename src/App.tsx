@@ -26,6 +26,12 @@ import {
   INITIAL_PROMOS
 } from './data';
 import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo } from './types';
+import { 
+  subscribeToCollection, 
+  subscribeToDocument, 
+  syncCollectionToFirestore, 
+  saveDocumentToFirestore 
+} from './services/firebaseSync';
 
 // Default Settings for Beranda / Landing Page
 const defaultLandingSettings = {
@@ -63,7 +69,7 @@ const defaultAboutSettings = {
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('beranda');
 
-  // Initialize state with localStorage values or defaults from data.ts
+  // React states initialized with default values or local cache
   const [products, setProducts] = useState<Product[]>(() => {
     const cached = localStorage.getItem('natnat_products');
     return cached ? JSON.parse(cached) : PRODUCTS;
@@ -114,85 +120,153 @@ export default function App() {
     return cached ? JSON.parse(cached) : INITIAL_PROMOS;
   });
 
-  // Keep localStorage updated upon state modifications safely
+  // Real-time Firebase Firestore subscriptions
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_products', JSON.stringify(products));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for products', e);
-    }
+    const unsubProducts = subscribeToCollection<Product>('products', setProducts, PRODUCTS);
+    const unsubArticles = subscribeToCollection<Article>('articles', setArticles, ARTICLES);
+    const unsubReports = subscribeToCollection<LabReport>('lab_reports', setLabReports, LAB_REPORTS);
+    const unsubMitra = subscribeToCollection<MitraSPPG>('mitra_list', setMitraList, MITRA_SPPG);
+    const unsubOrders = subscribeToCollection<Order>('orders', setOrders, INITIAL_ORDERS);
+    const unsubDeliveries = subscribeToCollection<DeliveryLog>('deliveries', setDeliveries, INITIAL_DELIVERIES);
+    const unsubTickets = subscribeToCollection<Ticket>('tickets', setTickets, INITIAL_TICKETS);
+    const unsubPromos = subscribeToCollection<Promo>('promos', setPromos, INITIAL_PROMOS);
+    const unsubLanding = subscribeToDocument<any>('landingSettings', setLandingSettings, defaultLandingSettings);
+    const unsubAbout = subscribeToDocument<any>('aboutSettings', setAboutSettings, defaultAboutSettings);
+
+    return () => {
+      unsubProducts();
+      unsubArticles();
+      unsubReports();
+      unsubMitra();
+      unsubOrders();
+      unsubDeliveries();
+      unsubTickets();
+      unsubPromos();
+      unsubLanding();
+      unsubAbout();
+    };
+  }, []);
+
+  // Firebase Firestore Sync Handlers
+  const handleSetProducts: React.Dispatch<React.SetStateAction<Product[]>> = (action) => {
+    setProducts((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('products', next);
+      return next;
+    });
+  };
+
+  const handleSetArticles: React.Dispatch<React.SetStateAction<Article[]>> = (action) => {
+    setArticles((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('articles', next);
+      return next;
+    });
+  };
+
+  const handleSetLabReports: React.Dispatch<React.SetStateAction<LabReport[]>> = (action) => {
+    setLabReports((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('lab_reports', next);
+      return next;
+    });
+  };
+
+  const handleSetMitraList: React.Dispatch<React.SetStateAction<MitraSPPG[]>> = (action) => {
+    setMitraList((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('mitra_list', next);
+      return next;
+    });
+  };
+
+  const handleSetOrders: React.Dispatch<React.SetStateAction<Order[]>> = (action) => {
+    setOrders((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('orders', next);
+      return next;
+    });
+  };
+
+  const handleSetDeliveries: React.Dispatch<React.SetStateAction<DeliveryLog[]>> = (action) => {
+    setDeliveries((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('deliveries', next);
+      return next;
+    });
+  };
+
+  const handleSetTickets: React.Dispatch<React.SetStateAction<Ticket[]>> = (action) => {
+    setTickets((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('tickets', next);
+      return next;
+    });
+  };
+
+  const handleSetPromos: React.Dispatch<React.SetStateAction<Promo[]>> = (action) => {
+    setPromos((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('promos', next);
+      return next;
+    });
+  };
+
+  const handleSetLandingSettings: React.Dispatch<React.SetStateAction<any>> = (action) => {
+    setLandingSettings((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      saveDocumentToFirestore('landingSettings', next);
+      return next;
+    });
+  };
+
+  const handleSetAboutSettings: React.Dispatch<React.SetStateAction<any>> = (action) => {
+    setAboutSettings((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      saveDocumentToFirestore('aboutSettings', next);
+      return next;
+    });
+  };
+
+  // LocalStorage Fallbacks
+  useEffect(() => {
+    try { localStorage.setItem('natnat_products', JSON.stringify(products)); } catch (e) {}
   }, [products]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_articles', JSON.stringify(articles));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for articles', e);
-    }
+    try { localStorage.setItem('natnat_articles', JSON.stringify(articles)); } catch (e) {}
   }, [articles]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_lab_reports', JSON.stringify(labReports));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for labReports', e);
-    }
+    try { localStorage.setItem('natnat_lab_reports', JSON.stringify(labReports)); } catch (e) {}
   }, [labReports]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_mitra_list', JSON.stringify(mitraList));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for mitraList', e);
-    }
+    try { localStorage.setItem('natnat_mitra_list', JSON.stringify(mitraList)); } catch (e) {}
   }, [mitraList]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_orders', JSON.stringify(orders));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for orders', e);
-    }
+    try { localStorage.setItem('natnat_orders', JSON.stringify(orders)); } catch (e) {}
   }, [orders]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_deliveries', JSON.stringify(deliveries));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for deliveries', e);
-    }
+    try { localStorage.setItem('natnat_deliveries', JSON.stringify(deliveries)); } catch (e) {}
   }, [deliveries]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_tickets', JSON.stringify(tickets));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for tickets', e);
-    }
+    try { localStorage.setItem('natnat_tickets', JSON.stringify(tickets)); } catch (e) {}
   }, [tickets]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_landing_settings', JSON.stringify(landingSettings));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for landingSettings', e);
-    }
+    try { localStorage.setItem('natnat_landing_settings', JSON.stringify(landingSettings)); } catch (e) {}
   }, [landingSettings]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_about_settings', JSON.stringify(aboutSettings));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for aboutSettings', e);
-    }
+    try { localStorage.setItem('natnat_about_settings', JSON.stringify(aboutSettings)); } catch (e) {}
   }, [aboutSettings]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('natnat_promos', JSON.stringify(promos));
-    } catch (e) {
-      console.warn('LocalStorage quota exceeded for promos', e);
-    }
+    try { localStorage.setItem('natnat_promos', JSON.stringify(promos)); } catch (e) {}
   }, [promos]);
 
   const renderActiveComponent = () => {
@@ -219,7 +293,7 @@ export default function App() {
           <HubungiKami 
             mitraList={mitraList} 
             ticketsList={tickets} 
-            setTicketsList={setTickets} 
+            setTicketsList={handleSetTickets} 
             landingSettings={landingSettings}
           />
         );
@@ -229,36 +303,36 @@ export default function App() {
             products={products}
             mitraList={mitraList}
             orders={orders}
-            setOrders={setOrders}
+            setOrders={handleSetOrders}
             deliveries={deliveries}
-            setDeliveries={setDeliveries}
+            setDeliveries={handleSetDeliveries}
             tickets={tickets}
-            setTickets={setTickets}
+            setTickets={handleSetTickets}
             labReports={labReports}
-            setLabReports={setLabReports}
+            setLabReports={handleSetLabReports}
           />
         );
       case 'admin':
         return (
           <AdminPanel 
             products={products}
-            setProducts={setProducts}
+            setProducts={handleSetProducts}
             articles={articles}
-            setArticles={setArticles}
+            setArticles={handleSetArticles}
             labReports={labReports}
-            setLabReports={setLabReports}
+            setLabReports={handleSetLabReports}
             mitraList={mitraList}
-            setMitraList={setMitraList}
+            setMitraList={handleSetMitraList}
             orders={orders}
-            setOrders={setOrders}
+            setOrders={handleSetOrders}
             tickets={tickets}
-            setTickets={setTickets}
+            setTickets={handleSetTickets}
             landingSettings={landingSettings}
-            setLandingSettings={setLandingSettings}
+            setLandingSettings={handleSetLandingSettings}
             aboutSettings={aboutSettings}
-            setAboutSettings={setAboutSettings}
+            setAboutSettings={handleSetAboutSettings}
             promos={promos}
-            setPromos={setPromos}
+            setPromos={handleSetPromos}
           />
         );
       default:
@@ -292,3 +366,4 @@ export default function App() {
     </div>
   );
 }
+

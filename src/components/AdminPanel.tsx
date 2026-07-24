@@ -721,9 +721,13 @@ export default function AdminPanel({
       {/* Header Admin */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-100">
         <div className="space-y-1.5">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
             <span className="bg-sky-500 text-white text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shadow-sm shadow-sky-100">
               CMS ACTIVE
+            </span>
+            <span className="bg-emerald-500 text-white text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-1 rounded-full shadow-sm shadow-emerald-100 flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+              <span>⚡ FIREBASE REAL-TIME ONLINE</span>
             </span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs font-medium text-slate-500 font-mono">PT Satriyo Abimanyu Prabangkara</span>
