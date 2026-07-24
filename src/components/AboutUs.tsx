@@ -1,11 +1,27 @@
-import React from 'react';
-import { Award, ShieldCheck, HeartPulse, Sparkles, Star, Target, Factory, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Award, 
+  ShieldCheck, 
+  HeartPulse, 
+  Star, 
+  Target, 
+  Factory, 
+  CheckCircle2, 
+  Eye, 
+  Download, 
+  FileText, 
+  X, 
+  FileCheck 
+} from 'lucide-react';
+import { CertificationItem } from '../types';
 
 interface AboutUsProps {
   aboutSettings?: any;
 }
 
 export default function AboutUs({ aboutSettings }: AboutUsProps) {
+  const [selectedPreviewDoc, setSelectedPreviewDoc] = useState<CertificationItem | null>(null);
+
   const settings = aboutSettings || {
     profilTitle: 'PT Satriyo Abimanyu Prabangkara',
     profilDesc: 'Kami adalah industri pengolahan susu pasteurisasi modern yang berkedudukan di Singosari, Malang, Jawa Timur. Didirikan dengan komitmen kuat untuk memajukan peternakan lokal Jawa Timur dan menyuplai kebutuhan pangan bergizi tinggi berskala nasional.',
@@ -22,6 +38,56 @@ export default function AboutUs({ aboutSettings }: AboutUsProps) {
       'Menerapkan digitalisasi logistik transparan untuk mendeteksi dini setiap kendala kualitas.',
       'Meringankan beban dapur SPPG dengan komitmen servis prima "Urusan Susu? Serahkan Pada Kami!"'
     ]
+  };
+
+  const defaultCertifications: CertificationItem[] = [
+    {
+      id: 'cert-1',
+      badge: 'BPJPH INDONESIA',
+      title: 'Sertifikat Halal Resmi',
+      docNumber: 'ID35110000214820323',
+      description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    },
+    {
+      id: 'cert-2',
+      badge: 'BADAN POM RI',
+      title: 'Izin Edar Pangan Olahan',
+      docNumber: 'MD 241031001099',
+      description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    },
+    {
+      id: 'cert-3',
+      badge: 'MUTU ISO 22000',
+      title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+      docNumber: 'ISO 22000:2018 Certified',
+      description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    }
+  ];
+
+  const certifications: CertificationItem[] = 
+    settings.certificationsList && settings.certificationsList.length > 0 
+      ? settings.certificationsList 
+      : defaultCertifications;
+
+  const handleDownloadFile = (docItem: CertificationItem) => {
+    if (!docItem.fileUrl) return;
+    const a = document.createElement('a');
+    a.href = docItem.fileUrl;
+    const extension = docItem.fileType === 'pdf' ? '.pdf' : (docItem.fileType === 'image' ? '.jpg' : '');
+    const downloadName = docItem.fileName || `${docItem.title.replace(/\s+/g, '_')}${extension}`;
+    a.download = downloadName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -107,7 +173,7 @@ export default function AboutUs({ aboutSettings }: AboutUsProps) {
 
       {/* Certifications and BPOM / Halal Showcase */}
       <section className="bg-slate-50 rounded-3xl p-8 lg:p-12 border border-slate-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5 space-y-4">
             <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase">Jaminan Standardisasi</span>
             <h2 className="font-sans font-black text-2xl sm:text-3xl text-slate-800">Sertifikasi & Kepatuhan Regulasi</h2>
@@ -116,51 +182,162 @@ export default function AboutUs({ aboutSettings }: AboutUsProps) {
             </p>
             <div className="flex flex-col space-y-2 text-xs">
               <div className="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/60">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>**Izin Usaha Terdaftar**: Perizinan Berusaha Berbasis Risiko</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span><strong className="text-slate-800">Izin Usaha Terdaftar</strong>: Perizinan Berusaha Berbasis Risiko (NIB)</span>
               </div>
               <div className="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/60">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>**Sertifikasi Halal**: Badan Penyelenggara Jaminan Produk Halal (BPJPH)</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span><strong className="text-slate-800">Sertifikasi Halal</strong>: Badan Penyelenggara Jaminan Produk Halal (BPJPH)</span>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-3 shadow-sm hover:-translate-y-1 transition-transform">
-              <div className="inline-block px-2.5 py-1 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">
-                BPJPH INDONESIA
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm">Sertifikat Halal Resmi</h3>
-              <p className="text-xs text-slate-500 font-mono">No ID: ID35110000214820323</p>
-              <p className="text-xs text-slate-400">
-                Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.
-              </p>
-            </div>
+            {certifications.map((item) => {
+              const isPdf = item.fileType === 'pdf' || (item.fileUrl && item.fileUrl.startsWith('data:application/pdf'));
+              const hasFile = Boolean(item.fileUrl);
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-3 shadow-sm hover:-translate-y-1 transition-transform">
-              <div className="inline-block px-2.5 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold">
-                BADAN POM RI
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm">Izin Edar Pangan Olahan</h3>
-              <p className="text-xs text-slate-500 font-mono">No MD: 241031001099</p>
-              <p className="text-xs text-slate-400">
-                Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.
-              </p>
-            </div>
+              return (
+                <div 
+                  key={item.id} 
+                  className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between space-y-3 shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-block px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 text-[10px] font-extrabold uppercase">
+                        {item.badge}
+                      </span>
+                      {hasFile && (
+                        <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
+                          <FileCheck className="w-3 h-3" />
+                          <span>{isPdf ? 'PDF Dokumen' : 'Foto Sertifikat'}</span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-slate-800 text-sm leading-snug">{item.title}</h3>
+                    {item.docNumber && (
+                      <p className="text-xs text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-100 inline-block">
+                        {item.docNumber}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-3 shadow-sm hover:-translate-y-1 transition-transform sm:col-span-2">
-              <div className="inline-block px-2.5 py-1 rounded bg-purple-50 text-purple-600 text-[10px] font-bold">
-                MUTU ISO 22000
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm">Sistem Manajemen Keamanan Pangan (Food Safety Management)</h3>
-              <p className="text-xs text-slate-500">
-                Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.
-              </p>
-            </div>
+                  {/* Actions for Certificate Document */}
+                  {hasFile ? (
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedPreviewDoc(item)}
+                        className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-sm"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Preview</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDownloadFile(item)}
+                        className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1"
+                        title="Unduh Dokumen / Foto Sertifikat"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Unduh</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400 flex items-center space-x-1 italic">
+                      <FileText className="w-3.5 h-3.5 text-slate-300" />
+                      <span>Dokumen terverifikasi resmi</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {selectedPreviewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-slate-900 text-white flex justify-between items-center shrink-0">
+              <div className="space-y-0.5">
+                <span className="bg-sky-500 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
+                  {selectedPreviewDoc.badge}
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
+                  <span>{selectedPreviewDoc.title}</span>
+                  {selectedPreviewDoc.docNumber && (
+                    <span className="text-xs text-slate-400 font-mono">({selectedPreviewDoc.docNumber})</span>
+                  )}
+                </h3>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {selectedPreviewDoc.fileUrl && (
+                  <button
+                    onClick={() => handleDownloadFile(selectedPreviewDoc)}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1 shadow-sm"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Unduh File</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedPreviewDoc(null)}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content / Document Previewer */}
+            <div className="p-4 sm:p-6 bg-slate-100 overflow-y-auto flex-1 flex flex-col items-center justify-center min-h-[300px]">
+              {selectedPreviewDoc.fileType === 'pdf' || (selectedPreviewDoc.fileUrl && selectedPreviewDoc.fileUrl.startsWith('data:application/pdf')) ? (
+                <div className="w-full h-full min-h-[60vh] flex flex-col items-center">
+                  <iframe 
+                    src={selectedPreviewDoc.fileUrl} 
+                    className="w-full h-[65vh] rounded-2xl border border-slate-200 bg-white shadow-inner"
+                    title={selectedPreviewDoc.title}
+                  />
+                  <div className="mt-3 text-center text-xs text-slate-500">
+                    Jika PDF tidak tampil di browser seluler Anda, silakan klik tombol <strong className="text-slate-800">Unduh File</strong> di kanan atas.
+                  </div>
+                </div>
+              ) : selectedPreviewDoc.fileUrl ? (
+                <div className="max-h-[70vh] flex items-center justify-center">
+                  <img 
+                    src={selectedPreviewDoc.fileUrl} 
+                    alt={selectedPreviewDoc.title} 
+                    className="max-h-[68vh] max-w-full object-contain rounded-2xl shadow-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-12 space-y-2">
+                  <FileText className="w-12 h-12 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500">Belum ada file terlampir untuk sertifikat ini.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-between items-center text-xs text-slate-500 shrink-0">
+              <span>PT Satriyo Abimanyu Prabangkara - Legalitas Resmi</span>
+              <button
+                onClick={() => setSelectedPreviewDoc(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+              >
+                Tutup Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

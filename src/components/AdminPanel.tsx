@@ -4,9 +4,9 @@ import {
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
   HelpCircle, Sparkles, Film, Upload, Copy, Download, Code,
-  Info, ExternalLink, FileJson, Phone
+  Info, ExternalLink, FileJson, Phone, ShieldCheck, FileCheck, FileUp
 } from 'lucide-react';
-import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo } from '../types';
+import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem } from '../types';
 import { formatWhatsAppUrl } from '../utils';
 
 interface AdminPanelProps {
@@ -135,7 +135,20 @@ export default function AdminPanel({
   }));
   // About Page Settings editing states
   const [tempAbout, setTempAbout] = useState(aboutSettings);
-  const [misiInputString, setMisiInputString] = useState(() => aboutSettings.misiList.join('\n'));
+  const [misiInputString, setMisiInputString] = useState(() => aboutSettings.misiList ? aboutSettings.misiList.join('\n') : '');
+
+  // Certification Item Modal State
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [editingCert, setEditingCert] = useState<CertificationItem | null>(null);
+  const [certForm, setCertForm] = useState<Omit<CertificationItem, 'id'>>({
+    badge: 'BPJPH INDONESIA',
+    title: '',
+    docNumber: '',
+    description: '',
+    fileUrl: '',
+    fileName: '',
+    fileType: 'pdf'
+  });
 
   // Notification helper
   const triggerNotification = (msg: string) => {
@@ -607,11 +620,134 @@ export default function AdminPanel({
     const splitMisi = misiInputString.split('\n').map(l => l.trim()).filter(Boolean);
     const updatedAbout = {
       ...tempAbout,
-      misiList: splitMisi
+      misiList: splitMisi,
+      certificationsList: tempAbout.certificationsList || []
     };
     setAboutSettings(updatedAbout);
     localStorage.setItem('natnat_about_settings_v2', JSON.stringify(updatedAbout));
-    triggerNotification('Profil & Visi Misi berhasil disimpan!');
+    triggerNotification('Profil, Visi Misi, & Sertifikasi berhasil disimpan!');
+  };
+
+  // Certification CRUD Handlers
+  const openAddCert = () => {
+    setEditingCert(null);
+    setCertForm({
+      badge: 'BPJPH INDONESIA',
+      title: '',
+      docNumber: '',
+      description: '',
+      fileUrl: '',
+      fileName: '',
+      fileType: 'pdf'
+    });
+    setIsCertModalOpen(true);
+  };
+
+  const openEditCert = (item: CertificationItem) => {
+    setEditingCert(item);
+    setCertForm({
+      badge: item.badge,
+      title: item.title,
+      docNumber: item.docNumber,
+      description: item.description,
+      fileUrl: item.fileUrl || '',
+      fileName: item.fileName || '',
+      fileType: item.fileType || 'pdf'
+    });
+    setIsCertModalOpen(true);
+  };
+
+  const handleCertSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!certForm.title.trim()) {
+      alert('Judul Sertifikasi / Dokumen Regulasi wajib diisi');
+      return;
+    }
+
+    const certData: CertificationItem = {
+      id: editingCert ? editingCert.id : `cert-${Date.now()}`,
+      ...certForm
+    };
+
+    const defaultCerts: CertificationItem[] = [
+      {
+        id: 'cert-1',
+        badge: 'BPJPH INDONESIA',
+        title: 'Sertifikat Halal Resmi',
+        docNumber: 'ID35110000214820323',
+        description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.'
+      },
+      {
+        id: 'cert-2',
+        badge: 'BADAN POM RI',
+        title: 'Izin Edar Pangan Olahan',
+        docNumber: 'MD 241031001099',
+        description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.'
+      },
+      {
+        id: 'cert-3',
+        badge: 'MUTU ISO 22000',
+        title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+        docNumber: 'ISO 22000:2018 Certified',
+        description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.'
+      }
+    ];
+
+    const currentList: CertificationItem[] = 
+      tempAbout.certificationsList && tempAbout.certificationsList.length > 0 
+        ? tempAbout.certificationsList 
+        : defaultCerts;
+
+    let updatedList: CertificationItem[];
+    if (editingCert) {
+      updatedList = currentList.map(c => c.id === editingCert.id ? certData : c);
+      triggerNotification('Sertifikasi & Kepatuhan Regulasi diperbarui!');
+    } else {
+      updatedList = [...currentList, certData];
+      triggerNotification('Sertifikat / Dokumen Regulasi baru ditambahkan!');
+    }
+
+    const updatedAbout = {
+      ...tempAbout,
+      certificationsList: updatedList
+    };
+
+    setTempAbout(updatedAbout);
+    setAboutSettings(updatedAbout);
+    setIsCertModalOpen(false);
+  };
+
+  const handleDeleteCert = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus dokumen sertifikasi ini?')) {
+      const currentList: CertificationItem[] = tempAbout.certificationsList || [];
+      const updatedList = currentList.filter(c => c.id !== id);
+      const updatedAbout = {
+        ...tempAbout,
+        certificationsList: updatedList
+      };
+      setTempAbout(updatedAbout);
+      setAboutSettings(updatedAbout);
+      triggerNotification('Sertifikasi berhasil dihapus!');
+    }
+  };
+
+  const handleCertFileUpload = (file: File) => {
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Ukuran file terlalu besar. Maksimum 15MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const isPdf = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+      setCertForm(prev => ({
+        ...prev,
+        fileUrl: reader.result as string,
+        fileName: file.name,
+        fileType: isPdf ? 'pdf' : 'image'
+      }));
+      triggerNotification(`File ${file.name} berhasil diunggah!`);
+    };
+    reader.readAsDataURL(file);
   };
 
   // ORDERS & COMPLAINTS WORKFLOW
@@ -1064,13 +1200,156 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                {/* Sertifikasi & Kepatuhan Regulasi Management */}
+                <div className="pt-6 border-t border-slate-100 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-sans font-black text-base text-slate-800 flex items-center space-x-2">
+                        <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                          <ShieldCheck className="w-4 h-4" />
+                        </span>
+                        <span>Jaminan Standardisasi Sertifikasi & Kepatuhan Regulasi</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Kelola data sertifikasi resmi (BPJPH Halal, BPOM, ISO) dan lampirkan dokumen PDF / Foto (JPG/PNG) untuk dapat dipreview atau diunduh oleh pengunjung.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={openAddCert}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center space-x-1.5 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tambah Sertifikat Baru</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {((tempAbout.certificationsList && tempAbout.certificationsList.length > 0) 
+                      ? tempAbout.certificationsList 
+                      : [
+                          {
+                            id: 'cert-1',
+                            badge: 'BPJPH INDONESIA',
+                            title: 'Sertifikat Halal Resmi',
+                            docNumber: 'ID35110000214820323',
+                            description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.'
+                          },
+                          {
+                            id: 'cert-2',
+                            badge: 'BADAN POM RI',
+                            title: 'Izin Edar Pangan Olahan',
+                            docNumber: 'MD 241031001099',
+                            description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.'
+                          },
+                          {
+                            id: 'cert-3',
+                            badge: 'MUTU ISO 22000',
+                            title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+                            docNumber: 'ISO 22000:2018 Certified',
+                            description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.'
+                          }
+                        ]
+                    ).map((cert: CertificationItem) => {
+                      const hasFile = Boolean(cert.fileUrl);
+                      const isPdf = cert.fileType === 'pdf' || (cert.fileUrl && cert.fileUrl.startsWith('data:application/pdf'));
+
+                      return (
+                        <div key={cert.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
+                                {cert.badge}
+                              </span>
+                              {hasFile ? (
+                                <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
+                                  <FileCheck className="w-3 h-3" />
+                                  <span>{isPdf ? 'PDF' : 'Gambar JPG/PNG'}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">Belum ada file</span>
+                              )}
+                            </div>
+                            <h5 className="font-bold text-slate-800 text-sm">{cert.title}</h5>
+                            {cert.docNumber && (
+                              <p className="text-[11px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">
+                                No: {cert.docNumber}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-slate-500 line-clamp-2">{cert.description}</p>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                            <div className="flex items-center space-x-1">
+                              <button
+                                type="button"
+                                onClick={() => openEditCert(cert)}
+                                className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center space-x-1"
+                                title="Edit data sertifikat"
+                              >
+                                <Edit className="w-3.5 h-3.5 text-sky-600" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCert(cert.id)}
+                                className="p-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold flex items-center space-x-1"
+                                title="Hapus sertifikat"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                              </button>
+                            </div>
+
+                            <label className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold flex items-center space-x-1 cursor-pointer">
+                              <FileUp className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>{hasFile ? 'Ganti File' : 'Upload File'}</span>
+                              <input
+                                type="file"
+                                accept="application/pdf,image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      const isFilePdf = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+                                      const updatedList = (tempAbout.certificationsList || []).map((c: CertificationItem) => 
+                                        c.id === cert.id ? {
+                                          ...c,
+                                          fileUrl: reader.result as string,
+                                          fileName: file.name,
+                                          fileType: isFilePdf ? 'pdf' : 'image'
+                                        } : c
+                                      );
+                                      const updatedAbout = {
+                                        ...tempAbout,
+                                        certificationsList: updatedList
+                                      };
+                                      setTempAbout(updatedAbout);
+                                      setAboutSettings(updatedAbout);
+                                      triggerNotification(`File ${file.name} berhasil diunggah untuk ${cert.title}!`);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
                   <button
                     type="submit"
                     className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs tracking-wider transition-colors flex items-center space-x-1.5"
                   >
                     <Save className="w-4 h-4" />
-                    <span>Simpan Profil & Misi</span>
+                    <span>Simpan Profil & Sertifikasi</span>
                   </button>
                 </div>
               </form>
@@ -2690,6 +2969,152 @@ export default function AdminPanel({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* CERTIFICATION EDIT / ADD MODAL */}
+      {isCertModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+            <div className="p-5 bg-slate-900 text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-400 bg-emerald-900/50 px-2 py-0.5 rounded-full">
+                  Dokumen & Legalitas
+                </span>
+                <h3 className="text-base font-bold text-white mt-1">
+                  {editingCert ? 'Edit Sertifikasi / Dokumen' : 'Tambah Sertifikat Baru'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsCertModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCertSubmit} className="p-6 space-y-4 overflow-y-auto text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Kategori / Badge Instansi (misal: BPJPH INDONESIA, BADAN POM RI, ISO 22000)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: BPJPH INDONESIA"
+                  value={certForm.badge}
+                  onChange={(e) => setCertForm({ ...certForm, badge: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-2.5 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Judul Sertifikat / Dokumen
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Sertifikat Halal Resmi"
+                  value={certForm.title}
+                  onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-2.5"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Nomor Sertifikat / Registrasi (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: ID35110000214820323"
+                  value={certForm.docNumber}
+                  onChange={(e) => setCertForm({ ...certForm, docNumber: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-2.5 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Deskripsi Singkat Dokumen
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Penjelasan cakupan jaminan sertifikat ini..."
+                  value={certForm.description}
+                  onChange={(e) => setCertForm({ ...certForm, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-2.5 focus:outline-none"
+                />
+              </div>
+
+              {/* Upload File PDF or JPG/PNG */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  Lampiran Dokumen (PDF atau Foto JPG/PNG - Maks 15MB)
+                </label>
+
+                {certForm.fileUrl ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2 overflow-hidden">
+                      <FileCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <div className="truncate">
+                        <p className="font-bold text-emerald-900 truncate">
+                          {certForm.fileName || 'File Terlampir'}
+                        </p>
+                        <p className="text-[10px] text-emerald-700 uppercase font-mono">
+                          Format: {certForm.fileType || 'PDF/Gambar'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setCertForm({ ...certForm, fileUrl: '', fileName: '', fileType: '' })}
+                      className="p-1.5 bg-white text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold shrink-0 border border-rose-200"
+                      title="Hapus Lampiran File"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-colors space-y-1.5">
+                    <Upload className="w-6 h-6 text-emerald-600" />
+                    <span className="font-bold text-slate-700">Klik untuk Pilih File PDF atau Foto Sertifikat</span>
+                    <span className="text-[10px] text-slate-400">Mendukung format .PDF, .JPG, .PNG, .WEBP</span>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleCertFileUpload(file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="pt-4 flex justify-end space-x-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCertModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center space-x-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{editingCert ? 'Simpan Perubahan' : 'Tambah Sertifikat'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

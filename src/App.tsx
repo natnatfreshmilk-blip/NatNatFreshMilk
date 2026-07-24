@@ -63,6 +63,38 @@ const defaultAboutSettings = {
     'Menjaga suhu rantai dingin (cold chain) stabil dibawah 4°C dari pemelukan sapi hingga meja konsumsi.',
     'Menerapkan digitalisasi logistik transparan untuk mendeteksi dini setiap kendala kualitas.',
     'Meringankan beban dapur SPPG dengan komitmen servis prima "Urusan Susu? Serahkan Pada Kami!"'
+  ],
+  certificationsList: [
+    {
+      id: 'cert-1',
+      badge: 'BPJPH INDONESIA',
+      title: 'Sertifikat Halal Resmi',
+      docNumber: 'ID35110000214820323',
+      description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    },
+    {
+      id: 'cert-2',
+      badge: 'BADAN POM RI',
+      title: 'Izin Edar Pangan Olahan',
+      docNumber: 'MD 241031001099',
+      description: 'Melalui pengawasan kelayakan pangan Badan Pengawas Obat dan Makanan guna menjamin keamanan konsumsi harian massal anak-anak.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    },
+    {
+      id: 'cert-3',
+      badge: 'MUTU ISO 22000',
+      title: 'Sistem Manajemen Keamanan Pangan (Food Safety Management)',
+      docNumber: 'ISO 22000:2018 Certified',
+      description: 'Pabrik kami mengadopsi standar internasional penjaminan mutu alur proses produksi guna mencegah kontaminasi fisik, kimia, ataupun biologis.',
+      fileUrl: '',
+      fileName: '',
+      fileType: ''
+    }
   ]
 };
 
