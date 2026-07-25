@@ -18,7 +18,7 @@ export const PRODUCTS: Product[] = [
       carbohydrates: '5.6 g'
     },
     description: 'Susu sapi segar 100% murni dari peternak lokal Singosari Malang, dipasteurisasi dengan suhu presisi untuk menjaga kesegaran dan enzim alami tanpa bahan pengawet. Dikemas dalam gelas cup sekali minum yang sangat disukai anak-anak.',
-    certifications: ['BPOM MD 241031001099', 'Halal ID35110000214820323', 'ISO 22000:2018 Certified']
+    certifications: ['BPOM MD 241031001099', 'Halal ID35410026435590825', 'ISO 22000:2018 Certified']
   },
   {
     id: 'prod-02',

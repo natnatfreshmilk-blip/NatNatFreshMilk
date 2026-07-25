@@ -106,7 +106,7 @@ export interface CertificationItem {
   id: string;
   badge: string; // e.g., 'BPJPH INDONESIA' or 'BADAN POM RI'
   title: string; // e.g., 'Sertifikat Halal Resmi'
-  docNumber: string; // e.g., 'ID35110000214820323'
+  docNumber: string; // e.g., 'ID35410026435590825'
   description: string;
   fileUrl?: string; // Base64 data URL or web link for PDF/JPG
   fileName?: string; // e.g., 'Sertifikat_Halal_BPJPH.pdf'

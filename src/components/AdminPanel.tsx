@@ -153,7 +153,7 @@ export default function AdminPanel({
       id: 'cert-1',
       badge: 'BPJPH INDONESIA',
       title: 'Sertifikat Halal Resmi',
-      docNumber: 'ID35110000214820323',
+      docNumber: 'ID35410026435590825',
       description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
       fileUrl: '',
       fileName: '',
@@ -546,12 +546,12 @@ export default function AdminPanel({
   // Login handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === 'admin') {
+    if (passcode === 'natnat123') {
       setIsAuthenticated(true);
       localStorage.setItem('natnat_admin_auth', 'true');
       setAuthError('');
     } else {
-      setAuthError('Passcode salah! Petunjuk: Gunakan passcode "admin"');
+      setAuthError('Passcode salah! Silakan periksa kembali passcode Anda.');
     }
   };
 
@@ -579,9 +579,9 @@ export default function AdminPanel({
         carbohydrates: '5.6 g'
       },
       description: '',
-      certifications: ['BPOM MD 241031001099', 'Halal ID35110000214820323']
+      certifications: ['BPOM MD 241031001099', 'Halal ID35410026435590825']
     });
-    setProdCertString('BPOM MD 241031001099, Halal ID35110000214820323');
+    setProdCertString('BPOM MD 241031001099, Halal ID35410026435590825');
     setIsProductModalOpen(true);
   };
 
@@ -1294,13 +1294,6 @@ export default function AdminPanel({
                 />
               </div>
               {authError && <p className="text-red-500 text-[11px] mt-1.5 font-medium">{authError}</p>}
-            </div>
-
-            <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 text-[11px] text-sky-700 space-y-1">
-              <span className="font-bold flex items-center">
-                <Sparkles className="w-3.5 h-3.5 mr-1" /> Petunjuk Pengujian Pengguna:
-              </span>
-              <p>Masukkan passcode <code className="bg-white px-1.5 py-0.5 rounded border border-sky-200 font-bold text-sky-800">admin</code> untuk masuk secara langsung.</p>
             </div>
 
             <button

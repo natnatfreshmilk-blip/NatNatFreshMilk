@@ -74,7 +74,7 @@ const defaultAboutSettings = {
       id: 'cert-1',
       badge: 'BPJPH INDONESIA',
       title: 'Sertifikat Halal Resmi',
-      docNumber: 'ID35110000214820323',
+      docNumber: 'ID35410026435590825',
       description: 'Menjamin kehalalan mutlak mulai dari pakan ternak sapi, penanganan pemerahan, hingga bahan pendukung sanitasi pengolahan.',
       fileUrl: '',
       fileName: '',

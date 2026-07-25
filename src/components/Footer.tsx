@@ -100,11 +100,11 @@ export default function Footer({ setActiveTab, landingSettings }: FooterProps) {
             <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400">
               <div className="p-2.5 rounded bg-slate-800/60 border border-slate-700/50 flex flex-col justify-center">
                 <span className="text-emerald-400 font-bold uppercase block text-[11px]">Halal Indonesia</span>
-                <span>ID35110000214820323</span>
+                <span>ID35410026435590825</span>
               </div>
               <div className="p-2.5 rounded bg-slate-800/60 border border-slate-700/50 flex flex-col justify-center">
                 <span className="text-blue-400 font-bold uppercase block text-[11px]">BPOM MD RI</span>
-                <span>Lolos Izin Edar Pangan</span>
+                <span>MD223711000201434</span>
               </div>
               <div className="p-2.5 rounded bg-slate-800/60 border border-slate-700/50 col-span-2 text-center">
                 <span className="text-sky-400 font-semibold block text-[10px]">Filosofi Layanan SPPG:</span>
