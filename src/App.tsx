@@ -24,9 +24,13 @@ import {
   INITIAL_DELIVERIES,
   INITIAL_TICKETS,
   INITIAL_PROMOS,
-  INITIAL_CERTS
+  INITIAL_CERTS,
+  INITIAL_PUBLIC_DOCS,
+  defaultEducationSettings,
+  INITIAL_PORTAL_USERS,
+  defaultPortalSettings
 } from './data';
-import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo, CertificationItem } from './types';
+import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo, CertificationItem, PublicDocument, PortalUser } from './types';
 import { 
   subscribeToCollection, 
   subscribeToDocument, 
@@ -171,6 +175,38 @@ export default function App() {
     return INITIAL_CERTS;
   });
 
+  const [publicDocs, setPublicDocs] = useState<PublicDocument[]>(() => {
+    const cached = localStorage.getItem('natnat_public_docs');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    return INITIAL_PUBLIC_DOCS;
+  });
+
+  const [educationSettings, setEducationSettings] = useState<any>(() => {
+    const cached = localStorage.getItem('natnat_education_settings');
+    if (cached) {
+      try { return { ...defaultEducationSettings, ...JSON.parse(cached) }; } catch (e) {}
+    }
+    return defaultEducationSettings;
+  });
+
+  const [portalUsers, setPortalUsers] = useState<PortalUser[]>(() => {
+    const cached = localStorage.getItem('natnat_portal_users');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    return INITIAL_PORTAL_USERS;
+  });
+
+  const [portalSettings, setPortalSettings] = useState<any>(() => {
+    const cached = localStorage.getItem('natnat_portal_settings');
+    if (cached) {
+      try { return { ...defaultPortalSettings, ...JSON.parse(cached) }; } catch (e) {}
+    }
+    return defaultPortalSettings;
+  });
+
   // Real-time Firebase Firestore subscriptions
   useEffect(() => {
     const unsubProducts = subscribeToCollection<Product>('products', setProducts, PRODUCTS);
@@ -182,8 +218,12 @@ export default function App() {
     const unsubTickets = subscribeToCollection<Ticket>('tickets', setTickets, INITIAL_TICKETS);
     const unsubPromos = subscribeToCollection<Promo>('promos', setPromos, INITIAL_PROMOS);
     const unsubCerts = subscribeToCollection<CertificationItem>('certifications', setCertifications, INITIAL_CERTS);
+    const unsubPublicDocs = subscribeToCollection<PublicDocument>('public_docs', setPublicDocs, INITIAL_PUBLIC_DOCS);
+    const unsubPortalUsers = subscribeToCollection<PortalUser>('portal_users', setPortalUsers, INITIAL_PORTAL_USERS);
     const unsubLanding = subscribeToDocument<any>('landingSettings', setLandingSettings, defaultLandingSettings);
     const unsubAbout = subscribeToDocument<any>('aboutSettings', setAboutSettings, defaultAboutSettings);
+    const unsubEducation = subscribeToDocument<any>('educationSettings', setEducationSettings, defaultEducationSettings);
+    const unsubPortalSettings = subscribeToDocument<any>('portalSettings', setPortalSettings, defaultPortalSettings);
 
     return () => {
       unsubProducts();
@@ -195,8 +235,12 @@ export default function App() {
       unsubTickets();
       unsubPromos();
       unsubCerts();
+      unsubPublicDocs();
+      unsubPortalUsers();
       unsubLanding();
       unsubAbout();
+      unsubEducation();
+      unsubPortalSettings();
     };
   }, []);
 
@@ -290,6 +334,42 @@ export default function App() {
     });
   };
 
+  const handleSetPublicDocs: React.Dispatch<React.SetStateAction<PublicDocument[]>> = (action) => {
+    setPublicDocs((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('public_docs', next);
+      try { localStorage.setItem('natnat_public_docs', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleSetEducationSettings: React.Dispatch<React.SetStateAction<any>> = (action) => {
+    setEducationSettings((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      saveDocumentToFirestore('educationSettings', next);
+      try { localStorage.setItem('natnat_education_settings', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleSetPortalUsers: React.Dispatch<React.SetStateAction<PortalUser[]>> = (action) => {
+    setPortalUsers((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('portal_users', next);
+      try { localStorage.setItem('natnat_portal_users', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleSetPortalSettings: React.Dispatch<React.SetStateAction<any>> = (action) => {
+    setPortalSettings((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      saveDocumentToFirestore('portalSettings', next);
+      try { localStorage.setItem('natnat_portal_settings', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
   // LocalStorage Fallbacks
   useEffect(() => {
     try { localStorage.setItem('natnat_products', JSON.stringify(products)); } catch (e) {}
@@ -331,6 +411,22 @@ export default function App() {
     try { localStorage.setItem('natnat_promos', JSON.stringify(promos)); } catch (e) {}
   }, [promos]);
 
+  useEffect(() => {
+    try { localStorage.setItem('natnat_public_docs', JSON.stringify(publicDocs)); } catch (e) {}
+  }, [publicDocs]);
+
+  useEffect(() => {
+    try { localStorage.setItem('natnat_education_settings', JSON.stringify(educationSettings)); } catch (e) {}
+  }, [educationSettings]);
+
+  useEffect(() => {
+    try { localStorage.setItem('natnat_portal_users', JSON.stringify(portalUsers)); } catch (e) {}
+  }, [portalUsers]);
+
+  useEffect(() => {
+    try { localStorage.setItem('natnat_portal_settings', JSON.stringify(portalSettings)); } catch (e) {}
+  }, [portalSettings]);
+
   const renderActiveComponent = () => {
     switch (activeTab) {
       case 'beranda':
@@ -349,7 +445,13 @@ export default function App() {
       case 'lacak':
         return <Traceability labReports={labReports} mitraList={mitraList} />;
       case 'edukasi':
-        return <EdukasiPublikasi articles={articles} />;
+        return (
+          <EdukasiPublikasi 
+            articles={articles} 
+            publicDocs={publicDocs}
+            educationSettings={educationSettings}
+          />
+        );
       case 'kontak':
         return (
           <HubungiKami 
@@ -372,6 +474,8 @@ export default function App() {
             setTickets={handleSetTickets}
             labReports={labReports}
             setLabReports={handleSetLabReports}
+            portalUsers={portalUsers}
+            portalSettings={portalSettings}
           />
         );
       case 'admin':
@@ -397,6 +501,14 @@ export default function App() {
             setPromos={handleSetPromos}
             certifications={certifications}
             setCertifications={handleSetCertifications}
+            publicDocs={publicDocs}
+            setPublicDocs={handleSetPublicDocs}
+            educationSettings={educationSettings}
+            setEducationSettings={handleSetEducationSettings}
+            portalUsers={portalUsers}
+            setPortalUsers={handleSetPortalUsers}
+            portalSettings={portalSettings}
+            setPortalSettings={handleSetPortalSettings}
           />
         );
       default:

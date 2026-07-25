@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Order, DeliveryLog, Ticket, LabReport, MitraSPPG, Product } from '../types';
+import { Order, DeliveryLog, Ticket, LabReport, MitraSPPG, Product, PortalUser } from '../types';
 import { ShieldCheck, LogIn, LogOut, KeyRound, Truck, ShoppingCart, RefreshCw, CheckCircle2, AlertTriangle, FilePen, Activity, FileSpreadsheet, Plus, HelpCircle, ThermometerSnowflake, FileSignature, ArrowRight } from 'lucide-react';
+import { defaultPortalSettings, INITIAL_PORTAL_USERS } from '../data';
 
 interface PortalSPPGProps {
   products: Product[];
@@ -13,6 +14,8 @@ interface PortalSPPGProps {
   setTickets: React.Dispatch<React.SetStateAction<Ticket[]>>;
   labReports: LabReport[];
   setLabReports: React.Dispatch<React.SetStateAction<LabReport[]>>;
+  portalUsers?: PortalUser[];
+  portalSettings?: any;
 }
 
 export default function PortalSPPG({
@@ -25,9 +28,15 @@ export default function PortalSPPG({
   tickets,
   setTickets,
   labReports,
-  setLabReports
+  setLabReports,
+  portalUsers,
+  portalSettings
 }: PortalSPPGProps) {
+  const settings = portalSettings || defaultPortalSettings;
+  const usersList = portalUsers && portalUsers.length > 0 ? portalUsers : INITIAL_PORTAL_USERS;
+
   const [currentUser, setCurrentUser] = useState<{ name: string; role: 'operator' | 'qc' | 'driver'; id: string; targetId?: string } | null>(null);
+
 
   // SPPG Form states
   const [orderProduct, setOrderProduct] = useState(() => products[0]?.id || 'prod-01');
@@ -266,13 +275,13 @@ export default function PortalSPPG({
       {/* 1. Header / Intro */}
       <section className="text-center max-w-2xl mx-auto space-y-4">
         <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-          Portal Otorisasi Mitra SPPG
+          {settings.badge || 'Portal Otorisasi Mitra SPPG'}
         </span>
         <h1 className="font-sans font-black text-2xl sm:text-3xl text-slate-800 tracking-tight leading-tight">
-          Sistem Pengawasan Logistik & Mutu Susu Nasional
+          {settings.title || 'Sistem Pengawasan Logistik & Mutu Susu Nasional'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-          Sistem internal terproteksi khusus untuk mencatatkan rencana kebutuhan susu harian, mengawasi suhu kompartemen pendingin selama distribusi, serta penandatanganan Berita Acara (BAST) digital.
+          {settings.description || 'Sistem internal terproteksi khusus untuk mencatatkan rencana kebutuhan susu harian, mengawasi suhu kompartemen pendingin selama distribusi, serta penandatanganan Berita Acara (BAST) digital.'}
         </p>
       </section>
 
@@ -283,35 +292,12 @@ export default function PortalSPPG({
             <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto shadow-md">
               <KeyRound className="w-6 h-6 text-sky-400" />
             </div>
-            <h3 className="font-sans font-black text-lg text-slate-800">Otorisasi Simulasi Akun</h3>
-            <p className="text-xs text-slate-400">Silakan pilih salah satu profil akun simulasi untuk menguji sistem</p>
+            <h3 className="font-sans font-black text-lg text-slate-800">{settings.cardTitle || 'Otorisasi Simulasi Akun'}</h3>
+            <p className="text-xs text-slate-400">{settings.cardSub || 'Silakan pilih salah satu profil akun simulasi untuk menguji sistem'}</p>
           </div>
 
           <div className="space-y-3">
-            {[
-              {
-                name: 'Budi Santoso, S.Gz',
-                role: 'operator' as const,
-                title: 'Koordinator SPPG Singosari 01',
-                desc: 'Melakukan pemesanan, pengajuan klaim freezer, dan penandatanganan BAST digital.',
-                id: 'usr-01',
-                targetId: 'mitra-01'
-              },
-              {
-                name: 'Hendra Wijaya, M.Si',
-                role: 'qc' as const,
-                title: 'Lab QC Supervisor Pabrik',
-                desc: 'Melihat log suhu reefer truck, melepas armada pengantaran, dan meresolusi aduan.',
-                id: 'usr-02'
-              },
-              {
-                name: 'Slamet Riyadi',
-                role: 'driver' as const,
-                title: 'Driver Reefer Truck 2',
-                desc: 'Melaporkan update pembacaan suhu cold-chain selama perjalanan.',
-                id: 'usr-03'
-              }
-            ].map((usr) => (
+            {usersList.map((usr) => (
               <button
                 key={usr.id}
                 onClick={() => {
@@ -340,7 +326,7 @@ export default function PortalSPPG({
           </div>
 
           <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-100 text-[10px] text-amber-700 leading-relaxed">
-            ⚠️ **Catatan Simulasi**: Sistem ini menggunakan local storage browser. Data pesanan baru, laporan suhu, tiket komplain, dan tanda tangan digital Anda akan disimpan dan diperbarui secara real-time.
+            ⚠️ <strong>Catatan Simulasi</strong>: {settings.simulationNotice || 'Sistem ini menggunakan local storage browser. Data pesanan baru, laporan suhu, tiket komplain, dan tanda tangan digital Anda akan disimpan dan diperbarui secara real-time.'}
           </div>
         </div>
       ) : (

@@ -4,11 +4,13 @@ import {
   Settings, Milk, FileText, Activity, Users, ShieldAlert,
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
   HelpCircle, Sparkles, Film, Upload, Copy, Download, Code,
-  Info, ExternalLink, FileJson, Phone, ShieldCheck, FileCheck, FileUp
+  Info, ExternalLink, FileJson, Phone, ShieldCheck, FileCheck, FileUp,
+  ShoppingCart, Truck
 } from 'lucide-react';
-import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem } from '../types';
+import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem, PublicDocument, PortalUser } from '../types';
 import { formatWhatsAppUrl } from '../utils';
 import { saveItemToFirestore, deleteItemFromFirestore, syncCollectionToFirestore } from '../services/firebaseSync';
+import { defaultEducationSettings, INITIAL_PUBLIC_DOCS, defaultPortalSettings, INITIAL_PORTAL_USERS } from '../data';
 
 interface AdminPanelProps {
   products: Product[];
@@ -31,9 +33,18 @@ interface AdminPanelProps {
   setPromos: React.Dispatch<React.SetStateAction<Promo[]>>;
   certifications?: CertificationItem[];
   setCertifications?: React.Dispatch<React.SetStateAction<CertificationItem[]>>;
+  publicDocs?: PublicDocument[];
+  setPublicDocs?: React.Dispatch<React.SetStateAction<PublicDocument[]>>;
+  educationSettings?: any;
+  setEducationSettings?: (settings: any) => void;
+  portalUsers?: PortalUser[];
+  setPortalUsers?: React.Dispatch<React.SetStateAction<PortalUser[]>>;
+  portalSettings?: any;
+  setPortalSettings?: (settings: any) => void;
 }
 
-type AdminTab = 'beranda_tentang' | 'promos' | 'produk' | 'artikel' | 'lab_reports' | 'mitra' | 'orders_tickets';
+type AdminTab = 'beranda_tentang' | 'promos' | 'produk' | 'artikel' | 'lab_reports' | 'mitra' | 'orders_tickets' | 'portal_sppg';
+
 
 export default function AdminPanel({
   products, setProducts,
@@ -45,7 +56,11 @@ export default function AdminPanel({
   landingSettings, setLandingSettings,
   aboutSettings, setAboutSettings,
   promos, setPromos,
-  certifications, setCertifications
+  certifications, setCertifications,
+  publicDocs, setPublicDocs,
+  educationSettings, setEducationSettings,
+  portalUsers, setPortalUsers,
+  portalSettings, setPortalSettings
 }: AdminPanelProps) {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -275,6 +290,73 @@ export default function AdminPanel({
     fileName: '',
     fileType: 'pdf'
   });
+
+  // Public Documents & Education Settings Management State
+  const publicDocsList = publicDocs && publicDocs.length > 0 ? publicDocs : INITIAL_PUBLIC_DOCS;
+  const eduSettings = educationSettings || defaultEducationSettings;
+
+  const [docTabActive, setDocTabActive] = useState<'docs' | 'settings' | 'articles'>('docs');
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<PublicDocument | null>(null);
+  const [docForm, setDocForm] = useState<Omit<PublicDocument, 'id'>>({
+    title: '',
+    docNumber: '',
+    size: '1.2 MB',
+    type: 'PDF',
+    description: '',
+    fileUrl: '',
+    fileName: ''
+  });
+
+  const [eduForm, setEduForm] = useState(() => ({
+    badge: eduSettings.badge || 'Pusat Informasi & Unduh',
+    title: eduSettings.title || 'Edukasi Gizi & Kepatuhan Dokumen Publik',
+    description: eduSettings.description || 'Kami menyediakan bahan edukasi mengenai stunting, SOP penanganan cold-chain untuk dapur SPPG, serta akses terbuka bagi instansi pengawas pemerintah untuk mengunduh izin edar dan sertifikat legalitas.',
+    docSectionTitle: eduSettings.docSectionTitle || 'Unduh Dokumen Publik',
+    docSectionSub: eduSettings.docSectionSub || 'Verifikasi legalitas untuk instansi pengawas',
+    docSectionDesc: eduSettings.docSectionDesc || 'Daftar dokumen legalitas, perizinan, dan laporan kualitas berkala PT. Satriyo Abimanyu Prabangkara yang dapat diakses secara terbuka.',
+    posterTitle: eduSettings.posterTitle || 'Klaim Poster Fisik SOP Dapur',
+    posterDesc: eduSettings.posterDesc || 'Setiap SPPG mitra mendapat kiriman gratis poster laminasi SOP Penyimpanan & Distribusi untuk dipasang di dinding dapur gizi.'
+  }));
+
+  useEffect(() => {
+    if (educationSettings && typeof educationSettings === 'object') {
+      setEduForm(prev => ({ ...prev, ...educationSettings }));
+    }
+  }, [educationSettings]);
+
+  // Portal SPPG Management State
+  const portalUsersList = portalUsers && portalUsers.length > 0 ? portalUsers : INITIAL_PORTAL_USERS;
+  const pSettings = portalSettings || defaultPortalSettings;
+
+  const [portalTabActive, setPortalTabActive] = useState<'users' | 'settings'>('users');
+  const [isPortalUserModalOpen, setIsPortalUserModalOpen] = useState(false);
+  const [editingPortalUser, setEditingPortalUser] = useState<PortalUser | null>(null);
+  const [portalUserForm, setPortalUserForm] = useState<Omit<PortalUser, 'id'>>({
+    name: '',
+    role: 'operator',
+    title: '',
+    desc: '',
+    targetId: '',
+    phone: '',
+    email: ''
+  });
+
+  const [portalSettingsForm, setPortalSettingsForm] = useState(() => ({
+    badge: pSettings.badge || 'Portal Otorisasi Mitra SPPG',
+    title: pSettings.title || 'Sistem Pengawasan Logistik & Mutu Susu Nasional',
+    description: pSettings.description || 'Sistem internal terproteksi khusus untuk mencatatkan rencana kebutuhan susu harian, mengawasi suhu kompartemen pendingin selama distribusi, serta penandatanganan Berita Acara (BAST) digital.',
+    cardTitle: pSettings.cardTitle || 'Otorisasi Simulasi Akun',
+    cardSub: pSettings.cardSub || 'Silakan pilih salah satu profil akun simulasi untuk menguji sistem',
+    simulationNotice: pSettings.simulationNotice || 'Catatan Simulasi: Sistem ini menggunakan local storage browser. Data pesanan baru, laporan suhu, tiket komplain, dan tanda tangan digital Anda akan disimpan dan diperbarui secara real-time.'
+  }));
+
+  useEffect(() => {
+    if (portalSettings && typeof portalSettings === 'object') {
+      setPortalSettingsForm(prev => ({ ...prev, ...portalSettings }));
+    }
+  }, [portalSettings]);
+
 
   // Notification helper
   const triggerNotification = (msg: string) => {
@@ -949,6 +1031,197 @@ export default function AdminPanel({
     });
   };
 
+  // PUBLIC DOCUMENTS & EDUCATION SETTINGS CRUD HANDLERS
+  const openAddDoc = () => {
+    setEditingDoc(null);
+    setDocForm({
+      title: '',
+      docNumber: '',
+      size: '1.0 MB',
+      type: 'PDF',
+      description: '',
+      fileUrl: '',
+      fileName: ''
+    });
+    setIsDocModalOpen(true);
+  };
+
+  const openEditDoc = (doc: PublicDocument) => {
+    setEditingDoc(doc);
+    setDocForm({
+      title: doc.title || '',
+      docNumber: doc.docNumber || '',
+      size: doc.size || '1.0 MB',
+      type: doc.type || 'PDF',
+      description: doc.description || '',
+      fileUrl: doc.fileUrl || '',
+      fileName: doc.fileName || ''
+    });
+    setIsDocModalOpen(true);
+  };
+
+  const handleSaveDoc = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docForm.title.trim() || !docForm.docNumber.trim()) {
+      alert('Judul dokumen dan nomor dokumen wajib diisi!');
+      return;
+    }
+
+    const confirmSave = window.confirm(`Apakah Anda yakin ingin menyimpan dokumen publik "${docForm.title}"?`);
+    if (!confirmSave) return;
+
+    const docData: PublicDocument = {
+      id: editingDoc ? editingDoc.id : `doc-${Date.now()}`,
+      ...docForm
+    };
+
+    if (setPublicDocs) {
+      setPublicDocs(prev => {
+        const exists = prev.some(d => d.id === docData.id);
+        if (exists) {
+          return prev.map(d => d.id === docData.id ? docData : d);
+        }
+        return [...prev, docData];
+      });
+    }
+
+    saveItemToFirestore('public_docs', docData);
+    setIsDocModalOpen(false);
+    triggerNotification(editingDoc ? 'Dokumen publik berhasil diperbarui!' : 'Dokumen publik baru berhasil ditambahkan!');
+  };
+
+  const handleDeleteDoc = (id: string) => {
+    const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus dokumen publik ini?');
+    if (!confirmDelete) return;
+
+    if (setPublicDocs) {
+      setPublicDocs(prev => prev.filter(d => d.id !== id));
+    }
+
+    deleteItemFromFirestore('public_docs', id);
+    triggerNotification('Dokumen publik berhasil dihapus!');
+  };
+
+  const processDocFileUpload = (file: File) => {
+    if (file.size > 600 * 1024) {
+      alert(`Ukuran file (${(file.size / 1024).toFixed(0)} KB) melebihi batas 600 KB. Silakan gunakan file PDF atau dokumen dengan ukuran di bawah 600 KB agar dapat disimpan secara efisien.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      const calculatedSize = file.size >= 1024 * 1024 
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+        : `${Math.round(file.size / 1024)} KB`;
+
+      setDocForm(prev => ({
+        ...prev,
+        fileUrl: result,
+        fileName: file.name,
+        size: calculatedSize,
+        type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.jpg') || file.name.endsWith('.png') ? 'GAMBAR' : 'DOKUMEN'
+      }));
+
+      triggerNotification(`File ${file.name} berhasil diunggah!`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveEducationSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    const confirmSave = window.confirm('Apakah Anda yakin ingin menyimpan perubahan teks Pusat Informasi & Edukasi?');
+    if (!confirmSave) return;
+
+    if (setEducationSettings) {
+      setEducationSettings(eduForm);
+    }
+    triggerNotification('Pengaturan Pusat Informasi & Edukasi berhasil disimpan!');
+  };
+
+  // PORTAL SPPG CRUD HANDLERS
+  const openAddPortalUser = () => {
+    setEditingPortalUser(null);
+    setPortalUserForm({
+      name: '',
+      role: 'operator',
+      title: '',
+      desc: '',
+      targetId: mitraList[0]?.id || 'mitra-01',
+      phone: '',
+      email: ''
+    });
+    setIsPortalUserModalOpen(true);
+  };
+
+  const openEditPortalUser = (user: PortalUser) => {
+    setEditingPortalUser(user);
+    setPortalUserForm({
+      name: user.name || '',
+      role: user.role || 'operator',
+      title: user.title || '',
+      desc: user.desc || '',
+      targetId: user.targetId || '',
+      phone: user.phone || '',
+      email: user.email || ''
+    });
+    setIsPortalUserModalOpen(true);
+  };
+
+  const handleSavePortalUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!portalUserForm.name.trim() || !portalUserForm.title.trim()) {
+      alert('Nama akun dan Jabatan/Title wajib diisi!');
+      return;
+    }
+
+    const confirmSave = window.confirm(`Apakah Anda yakin ingin menyimpan akun otorisasi "${portalUserForm.name}"?`);
+    if (!confirmSave) return;
+
+    const userData: PortalUser = {
+      id: editingPortalUser ? editingPortalUser.id : `usr-${Date.now()}`,
+      ...portalUserForm
+    };
+
+    if (setPortalUsers) {
+      setPortalUsers(prev => {
+        const exists = prev.some(u => u.id === userData.id);
+        if (exists) {
+          return prev.map(u => u.id === userData.id ? userData : u);
+        }
+        return [...prev, userData];
+      });
+    }
+
+    saveItemToFirestore('portal_users', userData);
+    setIsPortalUserModalOpen(false);
+    triggerNotification(editingPortalUser ? 'Akun otorisasi SPPG berhasil diperbarui!' : 'Akun otorisasi SPPG baru berhasil ditambahkan!');
+  };
+
+  const handleDeletePortalUser = (id: string) => {
+    const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus akun otorisasi ini?');
+    if (!confirmDelete) return;
+
+    if (setPortalUsers) {
+      setPortalUsers(prev => prev.filter(u => u.id !== id));
+    }
+
+    deleteItemFromFirestore('portal_users', id);
+    triggerNotification('Akun otorisasi SPPG berhasil dihapus!');
+  };
+
+  const handleSavePortalSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    const confirmSave = window.confirm('Apakah Anda yakin ingin menyimpan perubahan teks Portal Otorisasi SPPG?');
+    if (!confirmSave) return;
+
+    if (setPortalSettings) {
+      setPortalSettings(portalSettingsForm);
+    }
+    triggerNotification('Pengaturan Portal Otorisasi SPPG berhasil disimpan!');
+  };
+
+
   // ORDERS & COMPLAINTS WORKFLOW
   const handleOrderStatusChange = (id: string, newStatus: any) => {
     const updated = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
@@ -1093,9 +1366,10 @@ export default function AdminPanel({
             { id: 'beranda_tentang', label: 'Beranda & Profil', icon: <Settings className="w-4 h-4" /> },
             { id: 'promos', label: 'Kelola Promo & Media', icon: <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" /> },
             { id: 'produk', label: 'Katalog Produk', icon: <Milk className="w-4 h-4" /> },
-            { id: 'artikel', label: 'Artikel & Edukasi', icon: <FileText className="w-4 h-4" /> },
+            { id: 'artikel', label: 'Pusat Informasi & Dokumen Publik', icon: <FileText className="w-4 h-4" /> },
             { id: 'lab_reports', label: 'Lacak & Hasil Lab', icon: <Activity className="w-4 h-4" /> },
             { id: 'mitra', label: 'Mitra Dapur SPPG', icon: <Users className="w-4 h-4" /> },
+            { id: 'portal_sppg', label: 'Portal Otorisasi SPPG', icon: <KeyRound className="w-4 h-4 text-sky-500" /> },
             { id: 'orders_tickets', label: 'Pesanan & Aduan', icon: <ClipboardList className="w-4 h-4" /> },
           ].map(tab => (
             <button
@@ -1765,69 +2039,301 @@ export default function AdminPanel({
           )}
 
 
-          {/* TAB 3: ARTICLES CRUD */}
+          {/* TAB 3: PUSAT INFORMASI, UNDUH DOKUMEN PUBLIK, & ARTIKEL */}
           {activeTab === 'artikel' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="font-sans font-black text-lg text-slate-800">Manajemen Publikasi & SOP</h3>
-                  <p className="text-xs text-slate-400">Tulis atau edit artikel penyuluhan gizi dan prosedur cold-chain.</p>
+                  <h3 className="font-sans font-black text-xl text-slate-800 flex items-center space-x-2">
+                    <span className="p-2 rounded-xl bg-sky-100 text-sky-600"><FileText className="w-5 h-5" /></span>
+                    <span>Pusat Informasi & Unduh Edukasi Gizi & Kepatuhan Dokumen Publik</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Kelola dokumen perizinan publik yang dapat diunduh, poster SOP, serta artikel edukasi gizi & distribusi.
+                  </p>
                 </div>
-                <button
-                  onClick={openAddArticle}
-                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Buat Artikel</span>
-                </button>
+
+                {/* Sub-tab Switcher */}
+                <div className="flex p-1 bg-slate-100 rounded-2xl shrink-0">
+                  <button
+                    onClick={() => setDocTabActive('docs')}
+                    className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      docTabActive === 'docs' 
+                        ? 'bg-white text-slate-900 shadow-sm' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    📂 Unduh Dokumen Publik ({publicDocsList.length})
+                  </button>
+                  <button
+                    onClick={() => setDocTabActive('settings')}
+                    className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      docTabActive === 'settings' 
+                        ? 'bg-white text-slate-900 shadow-sm' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    ⚙️ Pengaturan Header & Poster
+                  </button>
+                  <button
+                    onClick={() => setDocTabActive('articles')}
+                    className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      docTabActive === 'articles' 
+                        ? 'bg-white text-slate-900 shadow-sm' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    📰 Artikel Edukasi ({articles.length})
+                  </button>
+                </div>
               </div>
 
-              {/* Articles table list */}
-              <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                      <th className="p-4">Judul Artikel</th>
-                      <th className="p-4">Kategori</th>
-                      <th className="p-4">Tanggal</th>
-                      <th className="p-4">Penulis</th>
-                      <th className="p-4 text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {articles.map(art => (
-                      <tr key={art.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-bold text-slate-800 max-w-[280px] truncate" title={art.title}>{art.title}</td>
-                        <td className="p-4">
-                          <span className="bg-sky-50 text-sky-600 font-bold px-2 py-0.5 rounded text-[10px]">
-                            {art.category}
-                          </span>
-                        </td>
-                        <td className="p-4 text-slate-500 font-mono">{art.date}</td>
-                        <td className="p-4 text-slate-500">{art.author}</td>
-                        <td className="p-4">
-                          <div className="flex justify-center space-x-1.5">
-                            <button
-                              onClick={() => openEditArticle(art)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-600 hover:text-sky-600 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteArticle(art.id)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
-                              title="Hapus"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* SUB-TAB 1: DOKUMEN PUBLIK CRUD */}
+              {docTabActive === 'docs' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center bg-sky-50/70 border border-sky-100 p-4 rounded-2xl">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm">Daftar Dokumen Publik & Legalitas Terbuka</h4>
+                      <p className="text-xs text-slate-500">
+                        Dokumen yang ada di sini langsung ditampilkan pada halaman "Unduh Dokumen Publik" untuk verifikasi instansi pengawas.
+                      </p>
+                    </div>
+                    <button
+                      onClick={openAddDoc}
+                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center space-x-1.5 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tambah Dokumen Baru</span>
+                    </button>
+                  </div>
+
+                  {/* Public Documents Table */}
+                  <div className="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                          <th className="p-4">No. Legalitas</th>
+                          <th className="p-4">Judul Dokumen</th>
+                          <th className="p-4">Keterangan / Deskripsi</th>
+                          <th className="p-4">Ukuran & Tipe</th>
+                          <th className="p-4">File Terunggah</th>
+                          <th className="p-4 text-center">Aksi (Edit / Hapus)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {publicDocsList.map((doc) => (
+                          <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="p-4 font-mono font-bold text-sky-600">{doc.docNumber}</td>
+                            <td className="p-4 font-bold text-slate-800">{doc.title}</td>
+                            <td className="p-4 text-slate-500 max-w-[200px] truncate">{doc.description || '-'}</td>
+                            <td className="p-4">
+                              <span className="bg-slate-100 font-mono font-bold text-slate-700 px-2 py-0.5 rounded text-[10px]">
+                                {doc.type} • {doc.size}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              {doc.fileUrl ? (
+                                <span className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200">
+                                  <CheckCircle className="w-3 h-3 mr-1 text-emerald-600" />
+                                  {doc.fileName || 'PDF Terlampir'}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 font-medium">Bawaan Sistem</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex justify-center space-x-1.5">
+                                <button
+                                  onClick={() => openEditDoc(doc)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-600 hover:text-sky-600 transition-colors"
+                                  title="Edit Dokumen"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteDoc(doc.id)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
+                                  title="Hapus Dokumen"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 2: PENGATURAN HEADER & POSTER SOP */}
+              {docTabActive === 'settings' && (
+                <form onSubmit={handleSaveEducationSettings} className="space-y-6 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm">Pengaturan Teks & Narasi Pusat Informasi</h4>
+                    <p className="text-xs text-slate-500">Ubah judul, narasi pengantar, dan promosi poster SOP Dapur Gizi.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Badge Header Halaman</label>
+                      <input
+                        type="text"
+                        value={eduForm.badge}
+                        onChange={e => setEduForm({ ...eduForm, badge: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Judul Utama Halaman</label>
+                      <input
+                        type="text"
+                        value={eduForm.title}
+                        onChange={e => setEduForm({ ...eduForm, title: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5 font-bold"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Deskripsi Pengantar Halaman</label>
+                      <textarea
+                        rows={3}
+                        value={eduForm.description}
+                        onChange={e => setEduForm({ ...eduForm, description: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Judul Seksi Dokumen</label>
+                      <input
+                        type="text"
+                        value={eduForm.docSectionTitle}
+                        onChange={e => setEduForm({ ...eduForm, docSectionTitle: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Sub-Judul Seksi Dokumen</label>
+                      <input
+                        type="text"
+                        value={eduForm.docSectionSub}
+                        onChange={e => setEduForm({ ...eduForm, docSectionSub: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Deskripsi Seksi Dokumen Publik</label>
+                      <input
+                        type="text"
+                        value={eduForm.docSectionDesc}
+                        onChange={e => setEduForm({ ...eduForm, docSectionDesc: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Judul Banner Poster SOP</label>
+                      <input
+                        type="text"
+                        value={eduForm.posterTitle}
+                        onChange={e => setEduForm({ ...eduForm, posterTitle: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Deskripsi Banner Poster SOP</label>
+                      <input
+                        type="text"
+                        value={eduForm.posterDesc}
+                        onChange={e => setEduForm({ ...eduForm, posterDesc: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center space-x-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Simpan Pengaturan Pusat Informasi</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* SUB-TAB 3: ARTIKEL CRUD */}
+              {docTabActive === 'articles' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm">Manajemen Artikel & Edukasi Gizi</h4>
+                      <p className="text-xs text-slate-400">Tulis atau edit artikel penyuluhan gizi dan prosedur cold-chain.</p>
+                    </div>
+                    <button
+                      onClick={openAddArticle}
+                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Buat Artikel Baru</span>
+                    </button>
+                  </div>
+
+                  {/* Articles table list */}
+                  <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                          <th className="p-4">Judul Artikel</th>
+                          <th className="p-4">Kategori</th>
+                          <th className="p-4">Tanggal</th>
+                          <th className="p-4">Penulis</th>
+                          <th className="p-4 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {articles.map(art => (
+                          <tr key={art.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="p-4 font-bold text-slate-800 max-w-[280px] truncate" title={art.title}>{art.title}</td>
+                            <td className="p-4">
+                              <span className="bg-sky-50 text-sky-600 font-bold px-2 py-0.5 rounded text-[10px]">
+                                {art.category}
+                              </span>
+                            </td>
+                            <td className="p-4 text-slate-500 font-mono">{art.date}</td>
+                            <td className="p-4 text-slate-500">{art.author}</td>
+                            <td className="p-4">
+                              <div className="flex justify-center space-x-1.5">
+                                <button
+                                  onClick={() => openEditArticle(art)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-600 hover:text-sky-600 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteArticle(art.id)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
+                                  title="Hapus"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1969,6 +2475,213 @@ export default function AdminPanel({
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+
+          {/* TAB 7: PORTAL OTORISASI MITRA SPPG MANAGEMENT */}
+          {activeTab === 'portal_sppg' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="font-sans font-black text-lg text-slate-800 flex items-center space-x-2">
+                    <KeyRound className="w-5 h-5 text-sky-500" />
+                    <span>Manajemen Portal Otorisasi Mitra SPPG</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">Kelola daftar akun profil otorisasi (Operator, QC, Driver) serta setelan tampilan header portal.</p>
+                </div>
+                
+                {portalTabActive === 'users' && (
+                  <button
+                    onClick={openAddPortalUser}
+                    className="px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-sky-100 flex items-center space-x-1.5 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Akun Otorisasi</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Sub-tabs header */}
+              <div className="flex border-b border-slate-200 space-x-4">
+                <button
+                  onClick={() => setPortalTabActive('users')}
+                  className={`pb-2.5 text-xs font-bold transition-all flex items-center space-x-2 border-b-2 ${
+                    portalTabActive === 'users'
+                      ? 'border-sky-500 text-sky-600 font-extrabold'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Daftar Akun Otorisasi ({portalUsersList.length})</span>
+                </button>
+                <button
+                  onClick={() => setPortalTabActive('settings')}
+                  className={`pb-2.5 text-xs font-bold transition-all flex items-center space-x-2 border-b-2 ${
+                    portalTabActive === 'settings'
+                      ? 'border-sky-500 text-sky-600 font-extrabold'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Pengaturan Header & Teks Portal</span>
+                </button>
+              </div>
+
+              {/* SUB TAB 1: USERS LIST & CRUD */}
+              {portalTabActive === 'users' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {portalUsersList.map(usr => {
+                      const associatedMitra = mitraList.find(m => m.id === usr.targetId);
+                      return (
+                        <div key={usr.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm hover:border-sky-300 transition-all flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center space-x-2.5">
+                                <div className={`p-2 rounded-xl text-white font-bold shrink-0 ${
+                                  usr.role === 'operator' ? 'bg-sky-500' :
+                                  usr.role === 'qc' ? 'bg-indigo-600' : 'bg-emerald-600'
+                                }`}>
+                                  {usr.role === 'operator' ? <ShoppingCart className="w-4 h-4" /> :
+                                   usr.role === 'qc' ? <ShieldCheck className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
+                                </div>
+                                <div>
+                                  <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                                    usr.role === 'operator' ? 'bg-sky-100 text-sky-700' :
+                                    usr.role === 'qc' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                                  }`}>
+                                    {usr.role === 'operator' ? 'Operator / Koordinator' :
+                                     usr.role === 'qc' ? 'QC Lab Supervisor' : 'Driver Reefer Truck'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="font-bold text-slate-800 text-sm">{usr.name}</h4>
+                              <p className="text-xs font-semibold text-sky-600">{usr.title}</p>
+                              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">{usr.desc}</p>
+                            </div>
+
+                            {usr.role === 'operator' && associatedMitra && (
+                              <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] text-slate-600">
+                                📍 <strong>Dapur SPPG:</strong> {associatedMitra.name} ({associatedMitra.location})
+                              </div>
+                            )}
+
+                            {(usr.phone || usr.email) && (
+                              <div className="text-[10px] text-slate-400 font-mono space-y-0.5">
+                                {usr.phone && <div>📞 {usr.phone}</div>}
+                                {usr.email && <div>✉️ {usr.email}</div>}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                            <button
+                              onClick={() => openEditPortalUser(usr)}
+                              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-600 text-xs font-bold transition-colors flex items-center space-x-1"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeletePortalUser(usr.id)}
+                              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 text-xs font-bold transition-colors flex items-center space-x-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Hapus</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* SUB TAB 2: PORTAL HEADER & TEXT SETTINGS */}
+              {portalTabActive === 'settings' && (
+                <form onSubmit={handleSavePortalSettings} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 space-y-5 text-xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <h4 className="font-bold text-slate-800 text-sm">Form Pengaturan Header & Banner Teks Portal SPPG</h4>
+                    <span className="text-[10px] font-mono text-sky-600 font-bold">Real-time CMS</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Teks Badge Kategori (Atas)</label>
+                      <input
+                        type="text"
+                        value={portalSettingsForm.badge}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, badge: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5 font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Judul Utama Portal</label>
+                      <input
+                        type="text"
+                        value={portalSettingsForm.title}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, title: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5 font-bold"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Deskripsi Ringkas Pengantar</label>
+                      <textarea
+                        rows={2}
+                        value={portalSettingsForm.description}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, description: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Judul Kartu Otorisasi</label>
+                      <input
+                        type="text"
+                        value={portalSettingsForm.cardTitle}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, cardTitle: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Sub-Judul Kartu Otorisasi</label>
+                      <input
+                        type="text"
+                        value={portalSettingsForm.cardSub}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, cardSub: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Catatan Peringatan / Simulasi (Banner Bawah)</label>
+                      <textarea
+                        rows={2}
+                        value={portalSettingsForm.simulationNotice}
+                        onChange={e => setPortalSettingsForm({ ...portalSettingsForm, simulationNotice: e.target.value })}
+                        className="w-full bg-white border border-slate-200 focus:border-sky-400 rounded-xl p-2.5 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center space-x-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Simpan Teks Portal SPPG</span>
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 
@@ -3308,6 +4021,278 @@ export default function AdminPanel({
           </div>
         </div>
       )}
+
+      {/* MODAL FOR PUBLIC DOCUMENT EDIT/ADD */}
+      {isDocModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <h3 className="font-sans font-black text-lg text-slate-800">
+                {editingDoc ? 'Edit Dokumen Publik' : 'Tambah Dokumen Publik Baru'}
+              </h3>
+              <button
+                onClick={() => setIsDocModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDoc} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Judul Dokumen / Legalitas *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="misal: Sertifikat Halal Indonesia (BPJPH)"
+                  value={docForm.title}
+                  onChange={e => setDocForm({ ...docForm, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Nomor Dokumen / Legalitas *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="misal: ID35110000214820323"
+                  value={docForm.docNumber}
+                  onChange={e => setDocForm({ ...docForm, docNumber: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Tipe Dokumen</label>
+                  <input
+                    type="text"
+                    placeholder="PDF"
+                    value={docForm.type}
+                    onChange={e => setDocForm({ ...docForm, type: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Ukuran File (Label)</label>
+                  <input
+                    type="text"
+                    placeholder="1.2 MB"
+                    value={docForm.size}
+                    onChange={e => setDocForm({ ...docForm, size: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Ringkasan / Keterangan Dokumen</label>
+                <input
+                  type="text"
+                  placeholder="misal: Verifikasi legalitas kehalalan pakan, sapi, & pengolahan"
+                  value={docForm.description || ''}
+                  onChange={e => setDocForm({ ...docForm, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Unggah Lampiran File PDF / Dokumen (Maks 600 KB)</label>
+                <div className="bg-sky-50/50 border-2 border-dashed border-sky-200 rounded-2xl p-4 text-center hover:bg-sky-50 transition-colors">
+                  {docForm.fileUrl ? (
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center space-x-2 text-xs text-emerald-700 bg-emerald-100/80 px-3 py-1.5 rounded-xl font-bold">
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        <span>File terpasang: {docForm.fileName || 'PDF Terlampir'}</span>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-sky-600 font-bold hover:underline cursor-pointer">
+                          Ganti File
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) processDocFileUpload(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block space-y-1">
+                      <Upload className="w-6 h-6 text-sky-500 mx-auto" />
+                      <span className="text-xs font-bold text-sky-700 block">Pilih File PDF dari Komputer</span>
+                      <span className="text-[10px] text-slate-400 block">Mendukung format .pdf, .jpg, .png (Ukuran &lt; 600 KB)</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) processDocFileUpload(file);
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsDocModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold transition-all shadow-md flex items-center space-x-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Dokumen</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FOR PORTAL SPPG USER EDIT/ADD */}
+      {isPortalUserModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <h3 className="font-sans font-black text-lg text-slate-800 flex items-center space-x-2">
+                <KeyRound className="w-5 h-5 text-sky-500" />
+                <span>{editingPortalUser ? 'Edit Akun Otorisasi SPPG' : 'Tambah Akun Otorisasi SPPG'}</span>
+              </h3>
+              <button
+                onClick={() => setIsPortalUserModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePortalUser} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Nama Lengkap & Gelar *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="misal: Budi Santoso, S.Gz"
+                  value={portalUserForm.name}
+                  onChange={e => setPortalUserForm({ ...portalUserForm, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Role / Peran Otorisasi *</label>
+                  <select
+                    value={portalUserForm.role}
+                    onChange={e => setPortalUserForm({ ...portalUserForm, role: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-bold"
+                  >
+                    <option value="operator">Operator / Koordinator SPPG</option>
+                    <option value="qc">Lab QC Supervisor Pabrik</option>
+                    <option value="driver">Driver Reefer Truck Cold-Chain</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Jabatan / Title Display *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="misal: Koordinator SPPG Singosari 01"
+                    value={portalUserForm.title}
+                    onChange={e => setPortalUserForm({ ...portalUserForm, title: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Deskripsi Hak Akses & Tugas Simulasi</label>
+                <textarea
+                  rows={2}
+                  placeholder="misal: Melakukan pemesanan, pengajuan klaim freezer, dan penandatanganan BAST digital."
+                  value={portalUserForm.desc}
+                  onChange={e => setPortalUserForm({ ...portalUserForm, desc: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                />
+              </div>
+
+              {portalUserForm.role === 'operator' && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Target Dapur SPPG Mitra (Khusus Operator)</label>
+                  <select
+                    value={portalUserForm.targetId || ''}
+                    onChange={e => setPortalUserForm({ ...portalUserForm, targetId: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                  >
+                    <option value="">-- Pilih Dapur SPPG --</option>
+                    {mitraList.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} - {m.location} (Kuota: {m.dailyQuota} Cup)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Nomor HP (Opsional)</label>
+                  <input
+                    type="text"
+                    placeholder="08123456789"
+                    value={portalUserForm.phone || ''}
+                    onChange={e => setPortalUserForm({ ...portalUserForm, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Kontak (Opsional)</label>
+                  <input
+                    type="email"
+                    placeholder="budi@sppg.id"
+                    value={portalUserForm.email || ''}
+                    onChange={e => setPortalUserForm({ ...portalUserForm, email: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsPortalUserModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold transition-all shadow-md flex items-center space-x-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Akun</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );

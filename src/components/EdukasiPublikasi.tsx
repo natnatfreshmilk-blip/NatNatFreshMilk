@@ -1,60 +1,46 @@
 import React, { useState } from 'react';
-import { Article } from '../types';
-import { FileDown, BookOpen, Calendar, User, Filter, ArrowRight, X, ShieldAlert, FileText, CheckCircle } from 'lucide-react';
+import { Article, PublicDocument } from '../types';
+import { FileDown, Calendar, User, ArrowRight, X, CheckCircle, ExternalLink } from 'lucide-react';
+import { defaultEducationSettings, INITIAL_PUBLIC_DOCS } from '../data';
 
 interface EdukasiPublikasiProps {
   articles: Article[];
+  publicDocs?: PublicDocument[];
+  educationSettings?: any;
 }
 
-export default function EdukasiPublikasi({ articles }: EdukasiPublikasiProps) {
+export default function EdukasiPublikasi({ articles, publicDocs, educationSettings }: EdukasiPublikasiProps) {
   const [activeCategory, setActiveCategory] = useState<'Semua' | 'Gizi' | 'SOP Distribusi' | 'Siaran Pers'>('Semua');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
 
   const categories = ['Semua', 'Gizi', 'SOP Distribusi', 'Siaran Pers'];
 
+  const settings = educationSettings || defaultEducationSettings;
+  const docsList = publicDocs && publicDocs.length > 0 ? publicDocs : INITIAL_PUBLIC_DOCS;
+
   const filteredArticles = activeCategory === 'Semua' 
     ? articles 
     : articles.filter(art => art.category === activeCategory);
 
-  const simulateDownload = (docName: string) => {
-    setDownloadingDoc(docName);
+  const handleDownloadDoc = (doc: PublicDocument) => {
+    if (doc.fileUrl) {
+      // If user uploaded file data URL or provided a link
+      const link = document.createElement('a');
+      link.href = doc.fileUrl;
+      link.download = doc.fileName || `${doc.title.replace(/\s+/g, '_')}.${doc.type?.toLowerCase() || 'pdf'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    setDownloadingDoc(doc.title);
     setTimeout(() => {
       setDownloadingDoc(null);
-      alert(`Berhasil mengunduh dokumen: ${docName}. File PDF terunduh ke sistem Anda.`);
-    }, 1500);
+      alert(`Berhasil mengunduh dokumen: ${doc.title}. File PDF terunduh ke sistem Anda.`);
+    }, 1200);
   };
-
-  const publicDocuments = [
-    {
-      id: 'doc-halal',
-      title: 'Sertifikat Halal Indonesia (BPJPH)',
-      no: 'ID35110000214820323',
-      size: '1.2 MB',
-      type: 'PDF'
-    },
-    {
-      id: 'doc-bpom',
-      title: 'Izin Edar Pangan Olahan Badan POM RI',
-      no: 'MD 241031001099',
-      size: '890 KB',
-      type: 'PDF'
-    },
-    {
-      id: 'doc-lab',
-      title: 'Laporan Uji Lab Kimia & Mikrobiologi Berkala',
-      no: 'Report of Analysis (ROA)',
-      size: '2.4 MB',
-      type: 'PDF'
-    },
-    {
-      id: 'doc-flyer',
-      title: 'Brosur & Panduan Teknis Kemitraan SPPG',
-      no: 'Flyer NatNat Fresh Milk',
-      size: '3.1 MB',
-      type: 'PDF'
-    }
-  ];
 
   return (
     <div id="education-page" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 space-y-16 animate-in fade-in duration-500">
@@ -62,13 +48,13 @@ export default function EdukasiPublikasi({ articles }: EdukasiPublikasiProps) {
       {/* Introduction */}
       <section className="text-center max-w-3xl mx-auto space-y-4">
         <span className="text-xs font-bold uppercase tracking-widest text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
-          Pusat Informasi & Unduh
+          {settings.badge || 'Pusat Informasi & Unduh'}
         </span>
         <h1 className="font-sans font-black text-3xl sm:text-4xl text-slate-800 tracking-tight leading-tight">
-          Edukasi Gizi & Kepatuhan Dokumen Publik
+          {settings.title || 'Edukasi Gizi & Kepatuhan Dokumen Publik'}
         </h1>
         <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-          Kami menyediakan bahan edukasi mengenai stunting, SOP penanganan cold-chain untuk dapur SPPG, serta akses terbuka bagi instansi pengawas pemerintah untuk mengunduh izin edar dan sertifikat legalitas.
+          {settings.description || 'Kami menyediakan bahan edukasi mengenai stunting, SOP penanganan cold-chain untuk dapur SPPG, serta akses terbuka bagi instansi pengawas pemerintah untuk mengunduh izin edar dan sertifikat legalitas.'}
         </p>
       </section>
 
@@ -82,35 +68,49 @@ export default function EdukasiPublikasi({ articles }: EdukasiPublikasiProps) {
               <FileDown className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-sans font-black text-lg text-slate-800">Unduh Dokumen Publik</h2>
-              <p className="text-xs text-slate-400">Verifikasi legalitas untuk instansi pengawas</p>
+              <h2 className="font-sans font-black text-lg text-slate-800">{settings.docSectionTitle || 'Unduh Dokumen Publik'}</h2>
+              <p className="text-xs text-slate-400">{settings.docSectionSub || 'Verifikasi legalitas untuk instansi pengawas'}</p>
             </div>
           </div>
 
           <p className="text-xs text-slate-500 leading-relaxed">
-            Daftar dokumen legalitas, perizinan, dan laporan kualitas berkala PT. Satriyo Abimanyu Prabangkara yang dapat diakses secara terbuka.
+            {settings.docSectionDesc || 'Daftar dokumen legalitas, perizinan, dan laporan kualitas berkala PT. Satriyo Abimanyu Prabangkara yang dapat diakses secara terbuka.'}
           </p>
 
           {/* List of documents */}
           <div className="space-y-3">
-            {publicDocuments.map((doc) => (
-              <div key={doc.id} className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm hover:border-sky-300 transition-colors flex items-center justify-between">
-                <div className="space-y-1 pr-4">
-                  <span className="text-[10px] text-slate-400 font-mono tracking-wider font-semibold block uppercase">NO: {doc.no}</span>
+            {docsList.map((doc) => (
+              <div key={doc.id} className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm hover:border-sky-300 transition-colors flex items-center justify-between gap-3">
+                <div className="space-y-1 pr-2 min-w-0 flex-1">
+                  <span className="text-[10px] text-slate-400 font-mono tracking-wider font-semibold block uppercase truncate">
+                    NO: {doc.docNumber}
+                  </span>
                   <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-snug">{doc.title}</h4>
-                  <span className="inline-block text-[10px] text-sky-600 bg-sky-50 px-2 py-0.5 rounded font-mono">{doc.type} • {doc.size}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-block text-[10px] text-sky-600 bg-sky-50 px-2 py-0.5 rounded font-mono font-semibold">
+                      {doc.type || 'PDF'} • {doc.size || '1.0 MB'}
+                    </span>
+                    {doc.fileName && (
+                      <span className="text-[10px] text-emerald-600 font-medium truncate max-w-[120px]">
+                        ✓ {doc.fileName}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <button
-                  onClick={() => simulateDownload(doc.title)}
+                  onClick={() => handleDownloadDoc(doc)}
                   disabled={downloadingDoc !== null}
-                  className="p-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors disabled:opacity-50 shrink-0"
-                  title="Unduh PDF"
+                  className="p-2.5 rounded-xl bg-slate-900 hover:bg-sky-600 text-white transition-colors disabled:opacity-50 shrink-0 flex items-center space-x-1"
+                  title="Unduh PDF / Dokumen"
                 >
                   {downloadingDoc === doc.title ? (
-                    <span className="text-xs font-semibold animate-pulse">Unduh...</span>
+                    <span className="text-xs font-semibold animate-pulse px-1">Unduh...</span>
                   ) : (
-                    <FileDown className="w-4 h-4" />
+                    <>
+                      <FileDown className="w-4 h-4" />
+                      {doc.fileUrl && <ExternalLink className="w-3 h-3 text-sky-300" />}
+                    </>
                   )}
                 </button>
               </div>
@@ -121,9 +121,9 @@ export default function EdukasiPublikasi({ articles }: EdukasiPublikasiProps) {
           <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100 flex items-start space-x-3 text-xs text-orange-800">
             <CheckCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
             <div>
-              <strong>Klaim Poster Fisik SOP Dapur</strong>
+              <strong>{settings.posterTitle || 'Klaim Poster Fisik SOP Dapur'}</strong>
               <p className="text-orange-700/90 mt-0.5">
-                Setiap SPPG mitra mendapat kiriman gratis poster laminasi SOP Penyimpanan & Distribusi untuk dipasang di dinding dapur gizi.
+                {settings.posterDesc || 'Setiap SPPG mitra mendapat kiriman gratis poster laminasi SOP Penyimpanan & Distribusi untuk dipasang di dinding dapur gizi.'}
               </p>
             </div>
           </div>

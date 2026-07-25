@@ -113,3 +113,25 @@ export interface CertificationItem {
   fileType?: 'pdf' | 'image' | string;
 }
 
+export interface PublicDocument {
+  id: string;
+  title: string;
+  docNumber: string;
+  size: string;
+  type: string;
+  description?: string;
+  fileUrl?: string;
+  fileName?: string;
+}
+
+export interface PortalUser {
+  id: string;
+  name: string;
+  role: 'operator' | 'qc' | 'driver';
+  title: string;
+  desc: string;
+  targetId?: string; // e.g. mitra-01 for SPPG operator
+  phone?: string;
+  email?: string;
+}
+

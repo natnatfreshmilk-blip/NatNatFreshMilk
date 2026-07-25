@@ -1,4 +1,4 @@
-import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo, CertificationItem } from './types';
+import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo, CertificationItem, PublicDocument, PortalUser } from './types';
 
 export const PRODUCTS: Product[] = [
   {
@@ -381,4 +381,86 @@ export const INITIAL_CERTS: CertificationItem[] = [
     fileType: 'pdf'
   }
 ];
+
+export const defaultEducationSettings = {
+  badge: 'Pusat Informasi & Unduh',
+  title: 'Edukasi Gizi & Kepatuhan Dokumen Publik',
+  description: 'Kami menyediakan bahan edukasi mengenai stunting, SOP penanganan cold-chain untuk dapur SPPG, serta akses terbuka bagi instansi pengawas pemerintah untuk mengunduh izin edar dan sertifikat legalitas.',
+  docSectionTitle: 'Unduh Dokumen Publik',
+  docSectionSub: 'Verifikasi legalitas untuk instansi pengawas',
+  docSectionDesc: 'Daftar dokumen legalitas, perizinan, dan laporan kualitas berkala PT. Satriyo Abimanyu Prabangkara yang dapat diakses secara terbuka.',
+  posterTitle: 'Klaim Poster Fisik SOP Dapur',
+  posterDesc: 'Setiap SPPG mitra mendapat kiriman gratis poster laminasi SOP Penyimpanan & Distribusi untuk dipasang di dinding dapur gizi.'
+};
+
+export const INITIAL_PUBLIC_DOCS: PublicDocument[] = [
+  {
+    id: 'doc-halal',
+    title: 'Sertifikat Halal Indonesia (BPJPH)',
+    docNumber: 'ID35110000214820323',
+    size: '1.2 MB',
+    type: 'PDF',
+    description: 'Verifikasi legalitas kehalalan pakan, sapi, & pengolahan'
+  },
+  {
+    id: 'doc-bpom',
+    title: 'Izin Edar Pangan Olahan Badan POM RI',
+    docNumber: 'MD 241031001099',
+    size: '890 KB',
+    type: 'PDF',
+    description: 'Kelayakan mutu & keamanan pangan olahan dari BPOM RI'
+  },
+  {
+    id: 'doc-lab',
+    title: 'Laporan Uji Lab Kimia & Mikrobiologi Berkala',
+    docNumber: 'Report of Analysis (ROA)',
+    size: '2.4 MB',
+    type: 'PDF',
+    description: 'Hasil pengujian mikrobiologi & nutrisi berkala'
+  },
+  {
+    id: 'doc-flyer',
+    title: 'Brosur & Panduan Teknis Kemitraan SPPG',
+    docNumber: 'Flyer NatNat Fresh Milk',
+    size: '3.1 MB',
+    type: 'PDF',
+    description: 'Panduan operasional dan kemitraan dapur SPPG MBG'
+  }
+];
+
+export const defaultPortalSettings = {
+  badge: 'Portal Otorisasi Mitra SPPG',
+  title: 'Sistem Pengawasan Logistik & Mutu Susu Nasional',
+  description: 'Sistem internal terproteksi khusus untuk mencatatkan rencana kebutuhan susu harian, mengawasi suhu kompartemen pendingin selama distribusi, serta penandatanganan Berita Acara (BAST) digital.',
+  cardTitle: 'Otorisasi Simulasi Akun',
+  cardSub: 'Silakan pilih salah satu profil akun simulasi untuk menguji sistem',
+  simulationNotice: 'Catatan Simulasi: Sistem ini menggunakan local storage browser. Data pesanan baru, laporan suhu, tiket komplain, dan tanda tangan digital Anda akan disimpan dan diperbarui secara real-time.'
+};
+
+export const INITIAL_PORTAL_USERS: PortalUser[] = [
+  {
+    id: 'usr-01',
+    name: 'Budi Santoso, S.Gz',
+    role: 'operator',
+    title: 'Koordinator SPPG Singosari 01',
+    desc: 'Melakukan pemesanan, pengajuan klaim freezer, dan penandatanganan BAST digital.',
+    targetId: 'mitra-01'
+  },
+  {
+    id: 'usr-02',
+    name: 'Hendra Wijaya, M.Si',
+    role: 'qc',
+    title: 'Lab QC Supervisor Pabrik',
+    desc: 'Melihat log suhu reefer truck, melepas armada pengantaran, dan meresolusi aduan.'
+  },
+  {
+    id: 'usr-03',
+    name: 'Slamet Riyadi',
+    role: 'driver',
+    title: 'Driver Reefer Truck 2',
+    desc: 'Melaporkan update pembacaan suhu cold-chain selama perjalanan.'
+  }
+];
+
+
 
