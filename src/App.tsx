@@ -14,6 +14,7 @@ import EdukasiPublikasi from './components/EdukasiPublikasi';
 import HubungiKami from './components/HubungiKami';
 import PortalSPPG from './components/PortalSPPG';
 import AdminPanel from './components/AdminPanel';
+import KegiatanShowcase from './components/KegiatanShowcase';
 
 import {
   PRODUCTS,
@@ -28,9 +29,10 @@ import {
   INITIAL_PUBLIC_DOCS,
   defaultEducationSettings,
   INITIAL_PORTAL_USERS,
-  defaultPortalSettings
+  defaultPortalSettings,
+  INITIAL_ACTIVITIES
 } from './data';
-import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo, CertificationItem, PublicDocument, PortalUser } from './types';
+import { Product, Article, LabReport, MitraSPPG, Order, DeliveryLog, Ticket, Promo, CertificationItem, PublicDocument, PortalUser, ActivityItem } from './types';
 import { 
   subscribeToCollection, 
   subscribeToDocument, 
@@ -207,6 +209,14 @@ export default function App() {
     return defaultPortalSettings;
   });
 
+  const [activities, setActivities] = useState<ActivityItem[]>(() => {
+    const cached = localStorage.getItem('natnat_activities');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    return INITIAL_ACTIVITIES;
+  });
+
   // Real-time Firebase Firestore subscriptions
   useEffect(() => {
     const unsubProducts = subscribeToCollection<Product>('products', setProducts, PRODUCTS);
@@ -220,6 +230,7 @@ export default function App() {
     const unsubCerts = subscribeToCollection<CertificationItem>('certifications', setCertifications, INITIAL_CERTS);
     const unsubPublicDocs = subscribeToCollection<PublicDocument>('public_docs', setPublicDocs, INITIAL_PUBLIC_DOCS);
     const unsubPortalUsers = subscribeToCollection<PortalUser>('portal_users', setPortalUsers, INITIAL_PORTAL_USERS);
+    const unsubActivities = subscribeToCollection<ActivityItem>('activities', setActivities, INITIAL_ACTIVITIES);
     const unsubLanding = subscribeToDocument<any>('landingSettings', setLandingSettings, defaultLandingSettings);
     const unsubAbout = subscribeToDocument<any>('aboutSettings', setAboutSettings, defaultAboutSettings);
     const unsubEducation = subscribeToDocument<any>('educationSettings', setEducationSettings, defaultEducationSettings);
@@ -237,6 +248,7 @@ export default function App() {
       unsubCerts();
       unsubPublicDocs();
       unsubPortalUsers();
+      unsubActivities();
       unsubLanding();
       unsubAbout();
       unsubEducation();
@@ -370,6 +382,15 @@ export default function App() {
     });
   };
 
+  const handleSetActivities: React.Dispatch<React.SetStateAction<ActivityItem[]>> = (action) => {
+    setActivities((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      syncCollectionToFirestore('activities', next);
+      try { localStorage.setItem('natnat_activities', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
   // LocalStorage Fallbacks
   useEffect(() => {
     try { localStorage.setItem('natnat_products', JSON.stringify(products)); } catch (e) {}
@@ -427,6 +448,10 @@ export default function App() {
     try { localStorage.setItem('natnat_portal_settings', JSON.stringify(portalSettings)); } catch (e) {}
   }, [portalSettings]);
 
+  useEffect(() => {
+    try { localStorage.setItem('natnat_activities', JSON.stringify(activities)); } catch (e) {}
+  }, [activities]);
+
   const renderActiveComponent = () => {
     switch (activeTab) {
       case 'beranda':
@@ -442,6 +467,8 @@ export default function App() {
         return <AboutUs aboutSettings={aboutSettings} certifications={certifications} />;
       case 'katalog':
         return <KatalogProduk products={products} />;
+      case 'kegiatan':
+        return <KegiatanShowcase activities={activities} />;
       case 'lacak':
         return <Traceability labReports={labReports} mitraList={mitraList} />;
       case 'edukasi':
@@ -509,6 +536,8 @@ export default function App() {
             setPortalUsers={handleSetPortalUsers}
             portalSettings={portalSettings}
             setPortalSettings={handleSetPortalSettings}
+            activities={activities}
+            setActivities={handleSetActivities}
           />
         );
       default:

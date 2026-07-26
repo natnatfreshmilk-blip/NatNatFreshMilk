@@ -1,4 +1,4 @@
-import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo, CertificationItem, PublicDocument, PortalUser } from './types';
+import { Product, MitraSPPG, Order, DeliveryLog, Ticket, Article, LabReport, Promo, CertificationItem, PublicDocument, PortalUser, ActivityItem } from './types';
 
 export const PRODUCTS: Product[] = [
   {
@@ -461,6 +461,49 @@ export const INITIAL_PORTAL_USERS: PortalUser[] = [
     desc: 'Melaporkan update pembacaan suhu cold-chain selama perjalanan.'
   }
 ];
+
+export const INITIAL_ACTIVITIES: ActivityItem[] = [
+  {
+    id: 'act-01',
+    title: 'Pelepasan Armada Cold-Chain Reefer Truck Suplai Susu Pasteurisasi Singosari',
+    category: 'Kegiatan',
+    date: '2026-07-20',
+    location: 'Pabrik Pengolahan NatNat, Singosari Malang',
+    summary: 'Pengiriman harian susu pasteurisasi cup higienis ke 52 titik Dapur SPPG dengan pengawasan suhu cold-chain otomatis < 4°C.',
+    description: 'Seluruh armada truk pendingin dilengkapi sensor IoT suhu real-time untuk memastikan kualitas susu tetap terjaga sempurna dari pabrik hingga meja makan siswa penerima manfaat MBG.',
+    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+    externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    externalPlatform: 'youtube',
+    statusBadge: 'Terlaksana 100%'
+  },
+  {
+    id: 'act-02',
+    title: 'Sukses Penyaluran 15.000 Cup Susu Segar Tanpa Retur Suhu di SPPG Singosari 01',
+    category: 'Success History',
+    date: '2026-07-15',
+    location: 'Dapur SPPG Singosari 01',
+    summary: 'Pencapaian milestone distribusi 100% tepat waktu dan tingkat kepuasan gizi tinggi bagi anak-anak penerima MBG.',
+    description: 'Melalui integrasi BAST digital dan pemantauan suhu otomatis, penyaluran susu pasteurisasi bebas dari klaim rusak atau basi selama rentang waktu 3 bulan berturut-turut.',
+    imageUrl: 'https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=800&q=80',
+    externalUrl: 'https://www.instagram.com/',
+    externalPlatform: 'instagram',
+    statusBadge: 'Pencapaian Unggul'
+  },
+  {
+    id: 'act-03',
+    title: 'Prospek Ekspansi Kemitraan Suplai Susu Dapur SPPG Wilayah Jawa Timur 2026',
+    category: 'Prospek',
+    date: '2026-08-01',
+    location: 'Malang Raya & Pasuruan',
+    summary: 'Rencana perluasan kerjasama dengan 30 Dapur SPPG baru & penambahan kapasitas pasteurisasi harian hingga 25.000 cup.',
+    description: 'Membuka peluang bagi koordinator SPPG & kelompok peternak sapi perah lokal untuk bergabung dalam rantai pasok terintegrasi NatNat Fresh Milk.',
+    imageUrl: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80',
+    externalUrl: 'https://www.facebook.com/',
+    externalPlatform: 'facebook',
+    statusBadge: 'Target Kuartal III'
+  }
+];
+
 
 
 

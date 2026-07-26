@@ -16,6 +16,7 @@ export default function Header({ activeTab, setActiveTab, openPortal }: HeaderPr
     { id: 'promo', label: 'Promo Gizi' },
     { id: 'tentang', label: 'Tentang Kami' },
     { id: 'katalog', label: 'Katalog & Gizi' },
+    { id: 'kegiatan', label: 'Kegiatan & Prospek' },
     { id: 'lacak', label: 'Lacak Susu (Traceability)' },
     { id: 'edukasi', label: 'Edukasi & Dokumen' },
     { id: 'kontak', label: 'Hubungi Kami' },

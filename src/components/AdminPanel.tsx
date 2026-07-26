@@ -5,12 +5,12 @@ import {
   ClipboardList, Check, X, RefreshCw, Layers, MapPin, Eye,
   HelpCircle, Sparkles, Film, Upload, Copy, Download, Code,
   Info, ExternalLink, FileJson, Phone, ShieldCheck, FileCheck, FileUp,
-  ShoppingCart, Truck
+  ShoppingCart, Truck, Youtube, Instagram, Facebook, Video, TrendingUp, Calendar
 } from 'lucide-react';
-import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem, PublicDocument, PortalUser } from '../types';
+import { Product, Article, LabReport, MitraSPPG, Order, Ticket, Promo, CertificationItem, PublicDocument, PortalUser, ActivityItem } from '../types';
 import { formatWhatsAppUrl } from '../utils';
 import { saveItemToFirestore, deleteItemFromFirestore, syncCollectionToFirestore } from '../services/firebaseSync';
-import { defaultEducationSettings, INITIAL_PUBLIC_DOCS, defaultPortalSettings, INITIAL_PORTAL_USERS } from '../data';
+import { defaultEducationSettings, INITIAL_PUBLIC_DOCS, defaultPortalSettings, INITIAL_PORTAL_USERS, INITIAL_ACTIVITIES } from '../data';
 
 interface AdminPanelProps {
   products: Product[];
@@ -41,9 +41,11 @@ interface AdminPanelProps {
   setPortalUsers?: React.Dispatch<React.SetStateAction<PortalUser[]>>;
   portalSettings?: any;
   setPortalSettings?: (settings: any) => void;
+  activities?: ActivityItem[];
+  setActivities?: React.Dispatch<React.SetStateAction<ActivityItem[]>>;
 }
 
-type AdminTab = 'beranda_tentang' | 'promos' | 'produk' | 'artikel' | 'lab_reports' | 'mitra' | 'orders_tickets' | 'portal_sppg';
+type AdminTab = 'beranda_tentang' | 'promos' | 'kegiatan' | 'produk' | 'artikel' | 'lab_reports' | 'mitra' | 'portal_sppg' | 'orders_tickets';
 
 
 export default function AdminPanel({
@@ -60,7 +62,8 @@ export default function AdminPanel({
   publicDocs, setPublicDocs,
   educationSettings, setEducationSettings,
   portalUsers, setPortalUsers,
-  portalSettings, setPortalSettings
+  portalSettings, setPortalSettings,
+  activities, setActivities
 }: AdminPanelProps) {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -356,6 +359,139 @@ export default function AdminPanel({
       setPortalSettingsForm(prev => ({ ...prev, ...portalSettings }));
     }
   }, [portalSettings]);
+
+  // Kegiatan & Prospek Management State
+  const activitiesList = activities && activities.length > 0 ? activities : INITIAL_ACTIVITIES;
+
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<ActivityItem | null>(null);
+  const [activityForm, setActivityForm] = useState<Omit<ActivityItem, 'id'>>({
+    title: '',
+    category: 'Kegiatan',
+    date: new Date().toISOString().split('T')[0],
+    location: '',
+    summary: '',
+    description: '',
+    imageUrl: '',
+    externalUrl: '',
+    externalPlatform: 'youtube',
+    statusBadge: 'Terlaksana'
+  });
+
+  const [isUploadingActivityImage, setIsUploadingActivityImage] = useState(false);
+
+  const detectExternalPlatform = (url: string): 'youtube' | 'instagram' | 'facebook' | 'other' => {
+    if (!url) return 'other';
+    const lower = url.toLowerCase();
+    if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'youtube';
+    if (lower.includes('instagram.com')) return 'instagram';
+    if (lower.includes('facebook.com') || lower.includes('fb.watch')) return 'facebook';
+    return 'other';
+  };
+
+  const openAddActivity = () => {
+    setEditingActivity(null);
+    setActivityForm({
+      title: '',
+      category: 'Kegiatan',
+      date: new Date().toISOString().split('T')[0],
+      location: '',
+      summary: '',
+      description: '',
+      imageUrl: '',
+      externalUrl: '',
+      externalPlatform: 'youtube',
+      statusBadge: 'Terlaksana'
+    });
+    setIsActivityModalOpen(true);
+  };
+
+  const openEditActivity = (act: ActivityItem) => {
+    setEditingActivity(act);
+    setActivityForm({
+      title: act.title,
+      category: act.category,
+      date: act.date,
+      location: act.location || '',
+      summary: act.summary,
+      description: act.description || '',
+      imageUrl: act.imageUrl || '',
+      externalUrl: act.externalUrl || '',
+      externalPlatform: act.externalPlatform || detectExternalPlatform(act.externalUrl || ''),
+      statusBadge: act.statusBadge || 'Terlaksana'
+    });
+    setIsActivityModalOpen(true);
+  };
+
+  const handleSaveActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activityForm.title.trim() || !activityForm.summary.trim()) {
+      alert("Judul dan Ringkasan kegiatan wajib diisi!");
+      return;
+    }
+
+    const platform = activityForm.externalUrl ? detectExternalPlatform(activityForm.externalUrl) : activityForm.externalPlatform;
+
+    if (editingActivity) {
+      const updated: ActivityItem = {
+        ...editingActivity,
+        ...activityForm,
+        externalPlatform: platform
+      };
+      if (setActivities) {
+        setActivities(prev => prev.map(a => a.id === editingActivity.id ? updated : a));
+      }
+      await saveItemToFirestore('activities', updated);
+      triggerNotification('Data Kegiatan / Prospek berhasil diperbarui!');
+    } else {
+      const newAct: ActivityItem = {
+        id: `act-${Date.now()}`,
+        ...activityForm,
+        externalPlatform: platform,
+        createdAt: new Date().toISOString()
+      };
+      if (setActivities) {
+        setActivities(prev => [newAct, ...prev]);
+      }
+      await saveItemToFirestore('activities', newAct);
+      triggerNotification('Kegiatan / Prospek baru berhasil ditambahkan!');
+    }
+    setIsActivityModalOpen(false);
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    if (confirm("Apakah Anda yakin ingin menghapus kegiatan/prospek ini?")) {
+      if (setActivities) {
+        setActivities(prev => prev.filter(a => a.id !== id));
+      }
+      await deleteItemFromFirestore('activities', id);
+      triggerNotification('Kegiatan / Prospek telah dihapus.');
+    }
+  };
+
+  const handleActivityImageUpload = async (file: File) => {
+    if (file) {
+      if (file.size > 15 * 1024 * 1024) {
+        alert("Ukuran gambar terlalu besar. Maksimum 15MB.");
+        return;
+      }
+      setIsUploadingActivityImage(true);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setActivityForm(prev => ({ ...prev, imageUrl: compressedBase64 }));
+        triggerNotification('Foto kegiatan berhasil diunggah & dioptimasi!');
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setActivityForm(prev => ({ ...prev, imageUrl: reader.result as string }));
+          triggerNotification('Foto kegiatan berhasil diunggah!');
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploadingActivityImage(false);
+      }
+    }
+  };
 
 
   // Notification helper
@@ -1358,6 +1494,7 @@ export default function AdminPanel({
           {[
             { id: 'beranda_tentang', label: 'Beranda & Profil', icon: <Settings className="w-4 h-4" /> },
             { id: 'promos', label: 'Kelola Promo & Media', icon: <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" /> },
+            { id: 'kegiatan', label: 'Kegiatan, History & Prospek', icon: <TrendingUp className="w-4 h-4 text-emerald-500" /> },
             { id: 'produk', label: 'Katalog Produk', icon: <Milk className="w-4 h-4" /> },
             { id: 'artikel', label: 'Pusat Informasi & Dokumen Publik', icon: <FileText className="w-4 h-4" /> },
             { id: 'lab_reports', label: 'Lacak & Hasil Lab', icon: <Activity className="w-4 h-4" /> },
@@ -1948,6 +2085,131 @@ export default function AdminPanel({
                       <tr>
                         <td colSpan={5} className="p-8 text-center text-slate-400 font-normal">
                           Tidak ada data promo terdaftar. Klik "+ Tambah Promo" untuk menyisipkan banner perdana.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+
+          {/* TAB: KEGIATAN, SUCCESS HISTORY & PROSPEK MANAGEMENT */}
+          {activeTab === 'kegiatan' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="font-sans font-black text-lg text-slate-800 flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    <span>Kelola Kegiatan, Success History & Prospek</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Tambah, edit, hapus dokumentasi kegiatan operasional, sejarah pencapaian, serta target prospek kemitraan Dapur SPPG.
+                  </p>
+                </div>
+
+                <button
+                  onClick={openAddActivity}
+                  className="px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-sky-100 flex items-center space-x-1.5 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Kegiatan / Prospek</span>
+                </button>
+              </div>
+
+              {/* Activities Data Table */}
+              <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                      <th className="p-4">Media</th>
+                      <th className="p-4">Judul & Kategori</th>
+                      <th className="p-4">Tanggal & Lokasi</th>
+                      <th className="p-4">Ringkasan & Link</th>
+                      <th className="p-4 text-center">Status Badge</th>
+                      <th className="p-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {activitiesList.length > 0 ? (
+                      activitiesList.map(act => (
+                        <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4">
+                            {act.imageUrl ? (
+                              <img 
+                                src={act.imageUrl} 
+                                alt={act.title} 
+                                className="w-16 h-12 object-cover rounded-lg border border-slate-200"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-16 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-bold">
+                                No Img
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 space-y-1 max-w-xs">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-100 inline-block">
+                              {act.category}
+                            </span>
+                            <h4 className="font-bold text-slate-800 text-xs leading-snug">{act.title}</h4>
+                          </td>
+                          <td className="p-4 space-y-1">
+                            <div className="flex items-center text-[11px] text-slate-600 font-medium">
+                              <Calendar className="w-3 h-3 mr-1 text-slate-400" />
+                              {act.date}
+                            </div>
+                            {act.location && (
+                              <div className="flex items-center text-[10px] text-slate-400 truncate max-w-[140px]">
+                                <MapPin className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
+                                <span className="truncate">{act.location}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 space-y-1 max-w-xs">
+                            <p className="text-slate-500 text-[11px] line-clamp-2">{act.summary}</p>
+                            {act.externalUrl && (
+                              <a
+                                href={act.externalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-600 hover:underline"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span className="truncate max-w-[150px]">{act.externalUrl}</span>
+                              </a>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-block">
+                              {act.statusBadge || 'Terlaksana'}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              <button
+                                onClick={() => openEditActivity(act)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-600 hover:text-sky-600 transition-colors"
+                                title="Edit Kegiatan"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteActivity(act.id)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
+                                title="Hapus Kegiatan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400">
+                          Belum ada data kegiatan / prospek. Klik "+ Tambah Kegiatan / Prospek" untuk menambahkan.
                         </td>
                       </tr>
                     )}
@@ -4279,6 +4541,217 @@ export default function AdminPanel({
                 >
                   <Save className="w-4 h-4" />
                   <span>Simpan Akun</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* MODAL EDIT/ADD KEGIATAN & PROSPEK */}
+      {isActivityModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8 border border-slate-100">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <h3 className="font-sans font-black text-lg text-slate-800 flex items-center space-x-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <span>{editingActivity ? 'Edit Kegiatan / Prospek' : 'Tambah Kegiatan / Prospek Baru'}</span>
+              </h3>
+              <button 
+                onClick={() => setIsActivityModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveActivity} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Judul Kegiatan / Prospek *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="misal: Pelepasan Armada Cold-Chain Reefer Truck SPPG Singosari"
+                  value={activityForm.title}
+                  onChange={e => setActivityForm({ ...activityForm, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kategori *</label>
+                  <select
+                    value={activityForm.category}
+                    onChange={e => setActivityForm({ ...activityForm, category: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-bold text-sky-700"
+                  >
+                    <option value="Kegiatan">Kegiatan Operasional</option>
+                    <option value="Success History">Success History (Rekor)</option>
+                    <option value="Prospek">Prospek Kerjasama</option>
+                    <option value="Dokumentasi">Dokumentasi Lapangan</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Status Badge / Tag</label>
+                  <input
+                    type="text"
+                    placeholder="misal: Terlaksana 100%, Target 2026"
+                    value={activityForm.statusBadge || ''}
+                    onChange={e => setActivityForm({ ...activityForm, statusBadge: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Tanggal *</label>
+                  <input
+                    type="date"
+                    required
+                    value={activityForm.date}
+                    onChange={e => setActivityForm({ ...activityForm, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Lokasi (Opsional)</label>
+                  <input
+                    type="text"
+                    placeholder="misal: Dapur SPPG Singosari 01"
+                    value={activityForm.location || ''}
+                    onChange={e => setActivityForm({ ...activityForm, location: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Ringkasan Singkat (Poin Utama) *</label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="Ringkasan singkat kegiatan yang akan tampil pada kartu..."
+                  value={activityForm.summary}
+                  onChange={e => setActivityForm({ ...activityForm, summary: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Deskripsi Detail Lapangan (Opsional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="Penjelasan lengkap mengenai kegiatan, pencapaian, atau statistik..."
+                  value={activityForm.description || ''}
+                  onChange={e => setActivityForm({ ...activityForm, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none"
+                />
+              </div>
+
+              {/* IMAGE UPLOAD & URL SECTION */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="block font-bold text-slate-700">Foto Kegiatan / Sampul Modal</label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Unggah dari Komputer (Otomatis Kompres)</label>
+                    <label className="border-2 border-dashed border-sky-200 bg-sky-50/50 hover:bg-sky-50 rounded-xl p-3 text-center cursor-pointer block transition-colors">
+                      <Upload className="w-5 h-5 text-sky-500 mx-auto mb-1" />
+                      <span className="text-[11px] font-bold text-sky-700 block">
+                        {isUploadingActivityImage ? 'Mengompres Gambar...' : 'Pilih File Gambar'}
+                      </span>
+                      <span className="text-[9px] text-slate-400 block">Maks 15MB (.jpg, .png)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) handleActivityImageUpload(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Atau Tempel URL Gambar Luar</label>
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/..."
+                      value={activityForm.imageUrl || ''}
+                      onChange={e => setActivityForm({ ...activityForm, imageUrl: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl p-3 focus:outline-none text-[11px]"
+                    />
+                  </div>
+                </div>
+
+                {activityForm.imageUrl && (
+                  <div className="relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 mt-2">
+                    <img 
+                      src={activityForm.imageUrl} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setActivityForm({ ...activityForm, imageUrl: '' })}
+                      className="absolute top-2 right-2 p-1 bg-slate-900/80 text-white rounded-full hover:bg-slate-900"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* EXTERNAL URL (YOUTUBE / INSTAGRAM / FACEBOOK) */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="block font-bold text-slate-700">Tautan Luar / Media Sosial (YouTube, Instagram, Facebook)</label>
+                <div className="relative">
+                  <ExternalLink className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="url"
+                    placeholder="misal: https://www.youtube.com/watch?v=... atau https://www.instagram.com/p/..."
+                    value={activityForm.externalUrl || ''}
+                    onChange={e => {
+                      const url = e.target.value;
+                      setActivityForm({
+                        ...activityForm,
+                        externalUrl: url,
+                        externalPlatform: detectExternalPlatform(url)
+                      });
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-sky-400 focus:bg-white rounded-xl pl-9 pr-3 py-3 focus:outline-none text-xs"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-semibold pt-1">
+                  <span>Platform Terdeteksi:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold uppercase border border-slate-200">
+                    {activityForm.externalPlatform || detectExternalPlatform(activityForm.externalUrl || '')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsActivityModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold transition-all shadow-md flex items-center space-x-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Data</span>
                 </button>
               </div>
             </form>

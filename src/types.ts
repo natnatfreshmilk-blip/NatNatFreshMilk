@@ -135,3 +135,19 @@ export interface PortalUser {
   email?: string;
 }
 
+export interface ActivityItem {
+  id: string;
+  title: string;
+  category: 'Kegiatan' | 'Success History' | 'Prospek' | 'Dokumentasi' | 'Lainnya';
+  date: string;
+  location?: string;
+  summary: string;
+  description?: string;
+  imageUrl?: string;
+  externalUrl?: string; // Facebook, Instagram, YouTube, or web link
+  externalPlatform?: 'youtube' | 'instagram' | 'facebook' | 'other';
+  statusBadge?: string; // e.g. 'Terlaksana', 'Sukses 100%', 'Prospek 2026'
+  createdAt?: string;
+}
+
+
